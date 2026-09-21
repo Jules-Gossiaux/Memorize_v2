@@ -6,7 +6,204 @@
     <title>Memorize</title>
   </head>
   <body>
-    <main id="app"></main>
+    <main id="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <div>
+            <strong>Memorize</strong
+            ><span>Construis ta mémoire, mot après mot.</span>
+          </div>
+        </div>
+        <button
+          id="theme-toggle"
+          class="icon-button"
+          type="button"
+          aria-label="Changer de thème"
+        >
+          ☼
+        </button>
+      </header>
+
+      <nav class="main-nav" aria-label="Navigation principale">
+        <button class="nav-button active" data-view="translate" type="button">
+          <span>✦</span> Traduire
+        </button>
+        <button class="nav-button" data-view="vocabulary" type="button">
+          <span>▦</span> Vocabulaire
+        </button>
+        <button class="nav-button" data-view="history" type="button">
+          <span>◷</span> Historique
+        </button>
+      </nav>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <section id="view-translate" class="view-panel">
+        <div class="hero-card">
+          <div class="eyebrow">NOUVELLE CAPTURE</div>
+          <h1>Transforme une découverte en souvenir.</h1>
+          <p class="hero-copy">
+            Sélectionne un mot ou une expression sur la page, puis laisse
+            Memorize faire le reste.
+          </p>
+          <div id="selection" class="selection-card">
+            <span class="selection-icon">⌁</span
+            ><span>Aucune sélection détectée.</span>
+          </div>
+          <div class="language-grid">
+            <label
+              ><span>Je lis</span
+              ><input id="source" value="en" maxlength="10" autocomplete="off"
+            /></label>
+            <button
+              id="swap-languages"
+              class="swap-button"
+              type="button"
+              aria-label="Inverser les langues"
+            >
+              ⇄
+            </button>
+            <label
+              ><span>Je mémorise en</span
+              ><input id="target" value="fr" maxlength="10" autocomplete="off"
+            /></label>
+          </div>
+          <div class="translate-actions">
+            <button id="translate" class="primary-button" type="button">
+              <span>✦</span> Traduire
+            </button>
+            <button id="save-preferences" class="text-button" type="button">
+              Enregistrer les langues
+            </button>
+          </div>
+        </div>
+        <div id="translation-result" class="result-card empty-result">
+          <div class="result-heading">
+            <span class="section-kicker">RÉSULTAT</span
+            ><span class="result-badge">En attente</span>
+          </div>
+          <p id="translation" class="translation">
+            La traduction apparaîtra ici.
+          </p>
+          <p id="translation-count" class="muted">
+            Rien n’est mémorisé automatiquement.
+          </p>
+          <button id="memorize" class="save-button" type="button" disabled>
+            ＋ Mémoriser cette traduction
+          </button>
+        </div>
+      </section>
+
+      <section id="view-vocabulary" class="view-panel hidden">
+        <div class="workspace-heading">
+          <div>
+            <div class="eyebrow">MA BIBLIOTHÈQUE</div>
+            <h1>Ton vocabulaire</h1>
+          </div>
+          <span id="vocabulary-total" class="count-pill">0 mots</span>
+        </div>
+        <div class="workspace">
+          <aside class="sidebar">
+            <div class="sidebar-heading">
+              <span>Dossiers</span
+              ><button
+                id="add-folder"
+                class="small-icon-button"
+                type="button"
+                aria-label="Créer un dossier"
+              >
+                ＋
+              </button>
+            </div>
+            <p class="sidebar-hint">
+              Glisse un mot sur un dossier pour le déplacer.
+            </p>
+            <div id="folder-tree" class="folder-tree" role="tree"></div>
+            <div class="sidebar-actions">
+              <button id="rename-folder" class="text-button" type="button">
+                Renommer</button
+              ><button
+                id="delete-folder"
+                class="text-button danger-text"
+                type="button"
+              >
+                Supprimer
+              </button>
+            </div>
+          </aside>
+          <div class="content-panel">
+            <div class="list-toolbar">
+              <div>
+                <span class="section-kicker">DOSSIER ACTIF</span>
+                <h2 id="active-folder-name">Vocabulaire</h2>
+              </div>
+              <label class="search-box"
+                ><span>⌕</span
+                ><input
+                  id="vocabulary-search"
+                  type="search"
+                  placeholder="Rechercher…"
+                  autocomplete="off"
+              /></label>
+            </div>
+            <ul id="vocabulary" class="vocabulary-grid"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-history" class="view-panel hidden">
+        <div class="workspace-heading">
+          <div>
+            <div class="eyebrow">JOURNAL D’APPRENTISSAGE</div>
+            <h1>Ton historique</h1>
+          </div>
+          <button
+            id="clear-history"
+            class="text-button danger-text"
+            type="button"
+          >
+            Vider l’historique
+          </button>
+        </div>
+        <div class="history-card">
+          <ul id="history" class="history-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="folder-dialog" class="folder-dialog">
+      <form id="folder-form" method="dialog">
+        <button
+          id="folder-dialog-close"
+          class="dialog-close"
+          type="button"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+        <div class="eyebrow">ORGANISATION</div>
+        <h2 id="folder-dialog-title">Nouveau dossier</h2>
+        <p id="folder-dialog-copy" class="muted">
+          Classe tes mots dans un espace qui te ressemble.
+        </p>
+        <label
+          >Nom du dossier<input
+            id="folder-dialog-name"
+            maxlength="80"
+            autocomplete="off"
+            required
+        /></label>
+        <label id="folder-parent-label"
+          >Dossier parent<select id="folder-dialog-parent"></select
+        ></label>
+        <div class="dialog-actions">
+          <button id="folder-dialog-cancel" class="text-button" type="button">
+            Annuler</button
+          ><button class="primary-button" type="submit">Confirmer</button>
+        </div>
+      </form>
+    </dialog>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
