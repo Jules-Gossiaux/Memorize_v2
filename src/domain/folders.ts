@@ -51,6 +51,7 @@ export function addFolder(
     data.folders.some(
       (folder) =>
         folder.parentId === parentId &&
+        !isLanguageFolder(folder) &&
         folder.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase(),
     )
   ) {

@@ -29,10 +29,14 @@
 * {
   box-sizing: border-box;
 }
+html {
+  width: 680px;
+  min-width: 680px;
+}
 body {
   margin: 0;
-  width: 430px;
-  min-height: 560px;
+  width: 680px;
+  min-height: 620px;
   background: inherit;
 }
 button,
@@ -44,7 +48,9 @@ button {
   cursor: pointer;
 }
 #app {
-  padding: 20px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 26px 32px 32px;
 }
 .app-header,
 .workspace-heading,
@@ -92,9 +98,9 @@ button {
 }
 .main-nav {
   display: flex;
-  gap: 20px;
+  gap: 26px;
   border-bottom: 1px solid var(--line);
-  margin: 22px 0 16px;
+  margin: 26px 0 20px;
 }
 .nav-button {
   border: 0;
@@ -128,7 +134,7 @@ button {
 .hero-card,
 .result-card,
 .history-card {
-  padding: 20px;
+  padding: 24px;
 }
 .eyebrow,
 .section-kicker {
@@ -138,7 +144,7 @@ button {
   letter-spacing: 0.13em;
 }
 h1 {
-  font-size: 25px;
+  font-size: 30px;
   letter-spacing: -0.04em;
   margin: 10px 0 8px;
 }
@@ -231,7 +237,7 @@ select:focus {
   opacity: 0.78;
 }
 .translation {
-  font-size: 23px;
+  font-size: 27px;
   letter-spacing: -0.035em;
   margin: 18px 0 9px;
   min-height: 30px;
@@ -263,13 +269,13 @@ select:focus {
 }
 .workspace {
   display: grid;
-  grid-template-columns: 132px 1fr;
-  min-height: 340px;
+  grid-template-columns: 190px 1fr;
+  min-height: 390px;
   overflow: hidden;
 }
 .sidebar {
   border-right: 1px solid var(--line);
-  padding: 14px;
+  padding: 18px;
 }
 .sidebar-heading {
   font-size: 12px;
@@ -323,7 +329,7 @@ select:focus {
   margin-top: 14px;
 }
 .content-panel {
-  padding: 16px;
+  padding: 20px;
   min-width: 0;
 }
 .list-toolbar {
@@ -430,15 +436,4 @@ select:focus {
 }
 .hidden {
   display: none !important;
-}
-@media (max-width: 390px) {
-  body {
-    width: 100%;
-  }
-  #app {
-    padding: 15px;
-  }
-  .workspace {
-    grid-template-columns: 115px 1fr;
-  }
 }

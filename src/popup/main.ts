@@ -425,13 +425,20 @@ function openFolderDialog(data: AppData, mode: FolderDialogMode): void {
   const selected = data.folders.find(
     (folder) => folder.id === selectedFolderId,
   );
-  name.value = mode === "rename" ? (selected?.name ?? "") : "";
+  name.value =
+    mode === "rename"
+      ? (selected?.name ?? "")
+      : saveAfterFolderCreation
+        ? "Mes mots"
+        : "";
   const parentLabel = getElement<HTMLLabelElement>("folder-parent-label");
   parentLabel.hidden = mode === "rename";
   if (mode === "create") {
     const parent = getElement<HTMLSelectElement>("folder-dialog-parent");
     const folders = data.folders.filter(
-      (folder) => folder.language === data.preferences.targetLanguage,
+      (folder) =>
+        folder.language === data.preferences.targetLanguage &&
+        !isSystemLanguageFolder(folder),
     );
     const rootOption = document.createElement("option");
     rootOption.value = ROOT_FOLDER_ID;

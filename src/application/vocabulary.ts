@@ -21,11 +21,11 @@ export function recordTranslationAttempt(
   const sourceLanguage = requiredText(
     request.sourceLanguage,
     "La langue source",
-  );
+  ).toLowerCase();
   const targetLanguage = requiredText(
     request.targetLanguage,
     "La langue cible",
-  );
+  ).toLowerCase();
   const id = vocabularyId(original, sourceLanguage, targetLanguage);
   const existing = data.vocabulary.find((entry) => entry.id === id);
   const next =
@@ -41,8 +41,8 @@ export function getTranslationCount(
 ): number {
   const id = vocabularyId(
     request.text,
-    request.sourceLanguage,
-    request.targetLanguage,
+    request.sourceLanguage.trim().toLowerCase(),
+    request.targetLanguage.trim().toLowerCase(),
   );
   const existing = data.vocabulary.find((entry) => entry.id === id);
   return Math.max(
@@ -85,11 +85,11 @@ export function saveTranslation(
   const sourceLanguage = requiredText(
     request.sourceLanguage,
     "La langue source",
-  );
+  ).toLowerCase();
   const targetLanguage = requiredText(
     request.targetLanguage,
     "La langue cible",
-  );
+  ).toLowerCase();
   const url = safeUrl(request.url);
   const context = request.context.trim().slice(0, 5_000);
   const id = vocabularyId(original, sourceLanguage, targetLanguage);
