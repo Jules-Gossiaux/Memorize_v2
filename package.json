@@ -1,0 +1,28 @@
+{
+  "name": "memorize-v2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Extension Chrome Manifest V3 pour mémoriser du vocabulaire traduit.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "format": "prettier --write package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js .prettierrc public src docs README.md RULES.md CONTRIBUTING.md CHANGELOG.md .github",
+    "format:check": "prettier --check package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js .prettierrc public src docs README.md RULES.md CONTRIBUTING.md CHANGELOG.md .github",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.27",
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

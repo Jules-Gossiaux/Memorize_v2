@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Memorize",
+  "version": "0.1.0",
+  "description": "Traduisez et mémorisez du vocabulaire depuis le web.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "action": {
+    "default_title": "Memorize",
+    "default_popup": "src/popup/index.html"
+  },
+  "background": { "service_worker": "assets/background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "src/options/index.html"
+}
