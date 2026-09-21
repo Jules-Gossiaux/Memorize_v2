@@ -5,3 +5,4 @@
 - Initialisation du socle TypeScript/Vite pour l’extension Chrome MV3.
 - Ajout du modèle de données versionné, du stockage et des invariants de dossiers.
 - Ajout des scripts de qualité et des premiers tests unitaires.
+- Ajout du parcours MVP sélection, traduction MyMemory, sauvegarde, déduplication et historique.

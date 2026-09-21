@@ -51,7 +51,7 @@ export const createEmptyData = (): AppData => ({
   vocabulary: [],
   folderEntries: {},
   history: [],
-  preferences: { sourceLanguage: "auto", targetLanguage: "fr", theme: "light" },
+  preferences: { sourceLanguage: "en", targetLanguage: "fr", theme: "light" },
 });
 
 export const vocabularyId = (

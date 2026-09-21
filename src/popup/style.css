@@ -9,9 +9,22 @@ body {
   margin: 0;
   padding: 16px;
 }
+main {
+  display: grid;
+  gap: 10px;
+}
 h1 {
   margin-top: 0;
   font-size: 20px;
+}
+h2 {
+  font-size: 14px;
+  margin: 8px 0 4px;
+}
+.language-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 label {
   display: block;
@@ -29,9 +42,46 @@ button {
   padding: 8px;
   cursor: pointer;
 }
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+button.secondary {
+  background: transparent;
+}
+.translation {
+  min-height: 1.2em;
+  font-weight: 600;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-heading button {
+  width: auto;
+  padding: 3px 6px;
+}
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 120px;
+  overflow: auto;
+}
+.items li {
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
 .muted {
   opacity: 0.75;
 }
 #status {
   min-height: 1.2em;
+}
+#status[data-state="error"] {
+  color: #b42318;
+}
+#status[data-state="success"] {
+  color: #16794c;
 }
