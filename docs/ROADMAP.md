@@ -1,7 +1,6 @@
 # Feuille de route
 
-1. Implémenter le stockage et l’UI complète du vocabulaire et des dossiers.
-2. Ajouter un fournisseur de traduction configurable et ses tests de contrat.
-3. Ajouter l’historique et les suppressions confirmées.
-4. Ajouter l’autofill Quizlet avec `MutationObserver`.
-5. Ajouter CI, export et documentation de déploiement.
+1. Ajouter des tests d’intégration Chrome et end-to-end.
+2. Ajouter l’autofill Quizlet avec `MutationObserver`.
+3. Ajouter export/import et documentation de déploiement.
+4. Ajouter une abstraction de fournisseurs avec détection de langues et options de repli.

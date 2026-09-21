@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
+    "dev:extension": "vite build --watch",
     "format": "prettier --write package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js .prettierrc public src docs README.md RULES.md CONTRIBUTING.md CHANGELOG.md .github",
     "format:check": "prettier --check package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js .prettierrc public src docs README.md RULES.md CONTRIBUTING.md CHANGELOG.md .github",
     "lint": "eslint .",
