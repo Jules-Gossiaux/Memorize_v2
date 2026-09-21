@@ -30,4 +30,4 @@ Les dates sont des chaînes ISO 8601 en UTC. Les identifiants métier des dossie
 
 ## Limites connues
 
-La traduction, la gestion complète de l’arborescence, l’historique visible, Quizlet, l’export et la CI sont prévus mais ne sont pas encore livrés. Le fournisseur de traduction devra être ajouté derrière `Translator`, avec validation stricte des réponses et gestion des secrets côté serveur si nécessaire.
+La traduction, la gestion complète de l’arborescence, l’historique visible, Quizlet, l’export et la CI sont prévus mais ne sont pas encore livrés. Le fournisseur de traduction devra être ajouté derrière `Translator`, avec validation stricte des réponses et gestion des secrets côté serveur si nécessaire. Le choix documenté pour rester gratuit est une instance LibreTranslate locale ou auto-hébergée ; Reverso Context ne sera pas scrapé.
