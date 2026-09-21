@@ -72,8 +72,14 @@ export function saveTranslation(
   data: AppData,
   request: TranslationRequest,
   translation: string,
+  folderIdOrNow?: string,
   now = new Date().toISOString(),
 ): SaveTranslationResult {
+  const legacyTimestamp = folderIdOrNow?.includes("T")
+    ? folderIdOrNow
+    : undefined;
+  const folderId = legacyTimestamp ? undefined : folderIdOrNow;
+  if (legacyTimestamp) now = legacyTimestamp;
   const original = requiredText(request.text, "Le texte original");
   const translated = requiredText(translation, "La traduction");
   const sourceLanguage = requiredText(
@@ -89,6 +95,12 @@ export function saveTranslation(
   const id = vocabularyId(original, sourceLanguage, targetLanguage);
   const existing = data.vocabulary.find((entry) => entry.id === id);
   const languageFolder = ensureLanguageFolder(data, targetLanguage, now);
+  const destination = folderId
+    ? data.folders.find((folder) => folder.id === folderId)
+    : languageFolder;
+  if (!destination) throw new Error("Dossier de destination introuvable.");
+  if (destination.language !== targetLanguage)
+    throw new Error("Le dossier choisi n'appartient pas à la langue cible.");
   const translatedCount = Math.max(
     data.translationStats[id] ?? 1,
     existing?.translatedCount ?? 0,
@@ -101,11 +113,11 @@ export function saveTranslation(
     existing.updatedAt = now;
     existing.translatedCount = translatedCount;
     addHistory(data, existing.id, now);
-    addToFolder(data, languageFolder.id, existing.id);
+    addToFolder(data, destination.id, existing.id);
     return {
       entry: existing,
       created: false,
-      languageFolderId: languageFolder.id,
+      languageFolderId: destination.id,
     };
   }
 
@@ -123,8 +135,20 @@ export function saveTranslation(
   };
   data.vocabulary.push(entry);
   addHistory(data, entry.id, now);
-  addToFolder(data, languageFolder.id, entry.id);
-  return { entry, created: true, languageFolderId: languageFolder.id };
+  addToFolder(data, destination.id, entry.id);
+  return { entry, created: true, languageFolderId: destination.id };
+}
+
+export function deleteVocabularyEntry(data: AppData, entryId: string): void {
+  if (!data.vocabulary.some((entry) => entry.id === entryId))
+    throw new Error("Vocabulaire introuvable.");
+  data.vocabulary = data.vocabulary.filter((entry) => entry.id !== entryId);
+  for (const folderId of Object.keys(data.folderEntries))
+    data.folderEntries[folderId] = (data.folderEntries[folderId] ?? []).filter(
+      (id) => id !== entryId,
+    );
+  data.history = data.history.filter((item) => item.vocabularyId !== entryId);
+  delete data.translationStats[entryId];
 }
 
 export function clearHistory(data: AppData): void {

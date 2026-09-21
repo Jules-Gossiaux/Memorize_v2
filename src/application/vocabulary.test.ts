@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { recordTranslationAttempt, saveTranslation } from "./vocabulary";
+import {
+  deleteVocabularyEntry,
+  recordTranslationAttempt,
+  saveTranslation,
+} from "./vocabulary";
+import {
+  addFolder,
+  ensureLanguageFolder,
+  ROOT_FOLDER_ID,
+} from "../domain/folders";
 import { createEmptyData } from "../domain/model";
 
 const request = {
@@ -63,5 +72,17 @@ describe("saveTranslation", () => {
       saveTranslation(data, { ...request, url: "not-a-url" }, "bonjour"),
     ).toThrow("L'URL est invalide.");
     expect(data.vocabulary).toHaveLength(0);
+  });
+
+  it("mémorise explicitement dans le dossier choisi et supprime un mot", () => {
+    const data = createEmptyData();
+    ensureLanguageFolder(data, "fr");
+    const folder = addFolder(data, "Voyage", "fr", ROOT_FOLDER_ID);
+    const result = saveTranslation(data, request, "bonjour", folder.id);
+    expect(data.folderEntries[folder.id]).toEqual([result.entry.id]);
+    deleteVocabularyEntry(data, result.entry.id);
+    expect(data.vocabulary).toHaveLength(0);
+    expect(data.folderEntries[folder.id]).toEqual([]);
+    expect(data.history).toHaveLength(0);
   });
 });

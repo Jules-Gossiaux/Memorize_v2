@@ -86,8 +86,9 @@
           <p id="translation" class="translation">
             La traduction apparaîtra ici.
           </p>
-          <p id="translation-count" class="muted">
-            Rien n’est mémorisé automatiquement.
+          <p id="translation-count" class="translation-count">
+            <strong id="translation-count-number">0</strong>
+            <span>traductions déjà réalisées</span>
           </p>
           <button id="memorize" class="save-button" type="button" disabled>
             ＋ Mémoriser cette traduction
@@ -201,6 +202,35 @@
           <button id="folder-dialog-cancel" class="text-button" type="button">
             Annuler</button
           ><button class="primary-button" type="submit">Confirmer</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="memorize-dialog" class="folder-dialog">
+      <form id="memorize-form" method="dialog">
+        <button
+          id="memorize-dialog-close"
+          class="dialog-close"
+          type="button"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+        <div class="eyebrow">MÉMORISER</div>
+        <h2>Où classer cette traduction&nbsp;?</h2>
+        <p class="muted">
+          Choisis un dossier pour garder ta bibliothèque nette.
+        </p>
+        <div id="memorize-empty" class="muted hidden">
+          Crée d’abord un dossier pour cette langue.
+        </div>
+        <label id="memorize-folder-label"
+          >Dossier<select id="memorize-folder"></select
+        ></label>
+        <div class="dialog-actions">
+          <button id="memorize-dialog-cancel" class="text-button" type="button">
+            Annuler
+          </button>
+          <button class="primary-button" type="submit">Mémoriser</button>
         </div>
       </form>
     </dialog>

@@ -62,18 +62,27 @@ describe("folders", () => {
     expect(data.folderEntries[fr.id]).toEqual(["e1"]);
   });
 
-  it("renomme et supprime un dossier sans supprimer le vocabulaire", () => {
+  it("crée un dossier à la racine et supprime ses mots avec lui", () => {
     const data = createEmptyData();
     const fr = ensureLanguageFolder(data, "fr");
-    const travel = addFolder(data, "Voyage", "fr", fr.id);
+    const travel = addFolder(data, "Voyage", "fr", ROOT_FOLDER_ID);
     const cities = addFolder(data, "Villes", "fr", travel.id);
     data.vocabulary.push(entry());
+    data.history.push({
+      id: "h1",
+      vocabularyId: "e1",
+      translatedAt: "2026-01-01",
+    });
+    data.translationStats.e1 = 2;
     data.folderEntries[cities.id] = ["e1"];
     renameFolder(data, travel.id, "Vacances");
     deleteFolder(data, travel.id);
     expect(data.folders.some((folder) => folder.id === travel.id)).toBe(false);
     expect(data.folders.some((folder) => folder.id === cities.id)).toBe(false);
-    expect(data.vocabulary).toHaveLength(1);
+    expect(data.vocabulary).toHaveLength(0);
+    expect(data.history).toHaveLength(0);
+    expect(data.translationStats.e1).toBeUndefined();
+    expect(fr.parentId).toBe(ROOT_FOLDER_ID);
   });
 
   it("déplace un dossier dans un autre sans autoriser les cycles", () => {

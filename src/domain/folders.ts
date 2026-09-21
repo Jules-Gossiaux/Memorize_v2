@@ -2,6 +2,10 @@ import type { AppData, Folder, VocabularyEntry } from "./model";
 
 export const ROOT_FOLDER_ID = "root";
 
+export function isLanguageFolder(folder: Folder): boolean {
+  return folder.id.startsWith("language-");
+}
+
 export function ensureLanguageFolder(
   data: AppData,
   language: string,
@@ -36,8 +40,9 @@ export function addFolder(
 ): Folder {
   const normalizedName = name.trim();
   const normalizedLanguage = language.trim().toLowerCase();
-  const parent = getFolder(data, parentId);
-  if (parent.language !== normalizedLanguage)
+  const parent =
+    parentId === ROOT_FOLDER_ID ? undefined : getFolder(data, parentId);
+  if (parent && parent.language !== normalizedLanguage)
     throw new Error(
       "Un dossier doit appartenir à un dossier de la même langue.",
     );
@@ -71,7 +76,7 @@ export function renameFolder(
   now = new Date().toISOString(),
 ): Folder {
   const folder = getFolder(data, folderId);
-  if (folder.parentId === ROOT_FOLDER_ID)
+  if (isLanguageFolder(folder))
     throw new Error("Les dossiers de langue ne peuvent pas être renommés.");
   const normalizedName = name.trim();
   if (!normalizedName) throw new Error("Le nom du dossier est obligatoire.");
@@ -93,11 +98,19 @@ export function renameFolder(
 
 export function deleteFolder(data: AppData, folderId: string): void {
   const folder = getFolder(data, folderId);
-  if (folder.parentId === ROOT_FOLDER_ID)
+  if (isLanguageFolder(folder))
     throw new Error("Un dossier de langue ne peut pas être supprimé.");
   const ids = new Set(getDescendantFolderIds(data, folderId));
+  const entryIds = new Set(
+    [...ids].flatMap((id) => data.folderEntries[id] ?? []),
+  );
   for (const id of ids) delete data.folderEntries[id];
   data.folders = data.folders.filter((candidate) => !ids.has(candidate.id));
+  data.vocabulary = data.vocabulary.filter((entry) => !entryIds.has(entry.id));
+  data.history = data.history.filter(
+    (item) => !entryIds.has(item.vocabularyId),
+  );
+  for (const entryId of entryIds) delete data.translationStats[entryId];
 }
 
 export function moveFolder(
@@ -108,7 +121,7 @@ export function moveFolder(
 ): void {
   const folder = getFolder(data, folderId);
   const target = getFolder(data, targetParentId);
-  if (folder.parentId === ROOT_FOLDER_ID)
+  if (isLanguageFolder(folder))
     throw new Error("Un dossier de langue ne peut pas être déplacé.");
   if (
     folderId === targetParentId ||
