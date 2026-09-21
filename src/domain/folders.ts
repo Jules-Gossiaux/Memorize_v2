@@ -100,6 +100,36 @@ export function deleteFolder(data: AppData, folderId: string): void {
   data.folders = data.folders.filter((candidate) => !ids.has(candidate.id));
 }
 
+export function moveFolder(
+  data: AppData,
+  folderId: string,
+  targetParentId: string,
+  now = new Date().toISOString(),
+): void {
+  const folder = getFolder(data, folderId);
+  const target = getFolder(data, targetParentId);
+  if (folder.parentId === ROOT_FOLDER_ID)
+    throw new Error("Un dossier de langue ne peut pas être déplacé.");
+  if (
+    folderId === targetParentId ||
+    getDescendantFolderIds(data, folderId).includes(targetParentId)
+  )
+    throw new Error("Un dossier ne peut pas être déplacé dans lui-même.");
+  if (folder.language !== target.language)
+    throw new Error("Un dossier ne peut pas changer de langue.");
+  if (
+    data.folders.some(
+      (candidate) =>
+        candidate.id !== folderId &&
+        candidate.parentId === targetParentId &&
+        candidate.name.toLocaleLowerCase() === folder.name.toLocaleLowerCase(),
+    )
+  )
+    throw new Error("Un dossier portant ce nom existe déjà à cet endroit.");
+  folder.parentId = targetParentId;
+  folder.updatedAt = now;
+}
+
 export function moveEntry(
   data: AppData,
   entryId: string,

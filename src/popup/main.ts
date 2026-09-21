@@ -4,8 +4,8 @@ import {
   deleteFolder,
   entriesInFolder,
   ensureLanguageFolder,
-  getDescendantFolderIds,
   moveEntry,
+  moveFolder,
   renameFolder,
   ROOT_FOLDER_ID,
 } from "../domain/folders";
@@ -26,62 +26,92 @@ interface SelectionResponse {
   url: string;
   context: string;
 }
+type ViewName = "translate" | "vocabulary" | "history";
+type FolderDialogMode = "create" | "rename";
 
 let selectedFolderId: string | null = null;
 let pendingTranslation: {
   request: TranslationRequest;
   translation: string;
 } | null = null;
+let folderDialogMode: FolderDialogMode = "create";
 
 void run();
 
 async function run(): Promise<void> {
-  const source = getElement<HTMLInputElement>("source");
-  const target = getElement<HTMLInputElement>("target");
-  const status = getElement<HTMLParagraphElement>("status");
   const data = await chromeStorage.load();
-  const languageFolder = ensureLanguageFolder(
+  const rootFolder = ensureLanguageFolder(
     data,
     data.preferences.targetLanguage,
   );
-  selectedFolderId = languageFolder.id;
+  selectedFolderId = rootFolder.id;
   await chromeStorage.save(data);
+  applyTheme(data.preferences.theme);
+  bindNavigation(data);
+  bindTranslation(data);
+  bindFolders(data);
+  bindHistory(data);
+  bindTheme(data);
   renderAll(data);
 
   const selection = await readSelection();
-  getElement<HTMLParagraphElement>("selection").textContent = selection.text
-    ? `Sélection : « ${selection.text} »`
-    : "Aucun texte sélectionné.";
+  renderSelection(selection);
+}
 
+function bindNavigation(data: AppData): void {
+  document
+    .querySelectorAll<HTMLButtonElement>(".nav-button")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const view = button.dataset.view as ViewName | undefined;
+        if (!view) return;
+        document
+          .querySelectorAll(".nav-button")
+          .forEach((item) => item.classList.toggle("active", item === button));
+        document
+          .querySelectorAll<HTMLElement>(".view-panel")
+          .forEach((panel) =>
+            panel.classList.toggle("hidden", panel.id !== `view-${view}`),
+          );
+        renderAll(data);
+      });
+    });
+}
+
+function bindTranslation(data: AppData): void {
+  const source = getElement<HTMLInputElement>("source");
+  const target = getElement<HTMLInputElement>("target");
+  source.value = data.preferences.sourceLanguage;
+  target.value = data.preferences.targetLanguage;
+  getElement<HTMLButtonElement>("swap-languages").addEventListener(
+    "click",
+    () => {
+      const value = source.value;
+      source.value = target.value;
+      target.value = value;
+    },
+  );
   getElement<HTMLButtonElement>("save-preferences").addEventListener(
     "click",
     async () => {
       const sourceLanguage = source.value.trim().toLowerCase();
       const targetLanguage = target.value.trim().toLowerCase();
-      if (!sourceLanguage || !targetLanguage) {
-        setStatus(status, "Les deux langues sont obligatoires.", true);
-        return;
-      }
+      if (!sourceLanguage || !targetLanguage)
+        return setStatus("Les deux langues sont obligatoires.", true);
       data.preferences.sourceLanguage = sourceLanguage;
       data.preferences.targetLanguage = targetLanguage;
       selectedFolderId = ensureLanguageFolder(data, targetLanguage).id;
       await chromeStorage.save(data);
       renderAll(data);
-      setStatus(status, "Préférences enregistrées.", false);
+      setStatus("Langues enregistrées.", false);
     },
   );
-
   getElement<HTMLButtonElement>("translate").addEventListener(
     "click",
     async () => {
-      if (!selection.text) {
-        setStatus(
-          status,
-          "Sélectionnez d’abord un mot ou une phrase sur la page.",
-          true,
-        );
-        return;
-      }
+      const selection = await readSelection();
+      if (!selection.text)
+        return setStatus("Sélectionne un mot ou une phrase sur la page.", true);
       const request: TranslationRequest = {
         ...selection,
         sourceLanguage: source.value,
@@ -94,14 +124,20 @@ async function run(): Promise<void> {
         await chromeStorage.save(data);
         pendingTranslation = { request, translation };
         getElement<HTMLParagraphElement>("translation").textContent =
-          `Traduction : ${translation}`;
+          translation;
         getElement<HTMLParagraphElement>("translation-count").textContent =
-          `Déjà traduit ${count} fois. Choisissez si vous voulez le mémoriser.`;
+          `Cette expression a été traduite ${count} fois.`;
         getElement<HTMLButtonElement>("memorize").disabled = false;
-        setStatus(status, "Traduction terminée.", false);
+        getElement<HTMLDivElement>("translation-result").classList.remove(
+          "empty-result",
+        );
+        const badge = document.querySelector<HTMLElement>(
+          "#translation-result .result-badge",
+        );
+        if (badge) badge.textContent = "Prêt à mémoriser";
+        setStatus("Belle découverte. À toi de décider si tu la gardes.", false);
       } catch (error) {
         setStatus(
-          status,
           error instanceof Error ? error.message : "La traduction a échoué.",
           true,
         );
@@ -110,7 +146,6 @@ async function run(): Promise<void> {
       }
     },
   );
-
   getElement<HTMLButtonElement>("memorize").addEventListener(
     "click",
     async () => {
@@ -124,22 +159,150 @@ async function run(): Promise<void> {
         await chromeStorage.save(data);
         pendingTranslation = null;
         getElement<HTMLButtonElement>("memorize").disabled = true;
-        renderAll(data);
         setStatus(
-          status,
-          result.created ? "Vocabulaire mémorisé." : "Vocabulaire mis à jour.",
+          result.created ? "Ajouté à ta bibliothèque." : "Entrée mise à jour.",
           false,
         );
+        activateView("vocabulary");
+        renderAll(data);
       } catch (error) {
         setStatus(
-          status,
           error instanceof Error ? error.message : "La mémorisation a échoué.",
           true,
         );
       }
     },
   );
+}
 
+function bindFolders(data: AppData): void {
+  getElement<HTMLButtonElement>("add-folder").addEventListener("click", () =>
+    openFolderDialog(data, "create"),
+  );
+  getElement<HTMLButtonElement>("rename-folder").addEventListener(
+    "click",
+    () => {
+      if (isLanguageFolder(data, selectedFolderId))
+        return setStatus(
+          "Les dossiers de langue ne peuvent pas être renommés.",
+          true,
+        );
+      openFolderDialog(data, "rename");
+    },
+  );
+  getElement<HTMLButtonElement>("delete-folder").addEventListener(
+    "click",
+    async () => {
+      if (!selectedFolderId || isLanguageFolder(data, selectedFolderId))
+        return setStatus(
+          "Les dossiers de langue ne peuvent pas être supprimés.",
+          true,
+        );
+      if (
+        !window.confirm(
+          "Supprimer ce dossier et ses sous-dossiers ? Le vocabulaire sera conservé.",
+        )
+      )
+        return;
+      try {
+        deleteFolder(data, selectedFolderId);
+        selectedFolderId = ensureLanguageFolder(
+          data,
+          data.preferences.targetLanguage,
+        ).id;
+        await chromeStorage.save(data);
+        renderAll(data);
+        setStatus("Dossier supprimé. Ton vocabulaire est intact.", false);
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : "Suppression impossible.",
+          true,
+        );
+      }
+    },
+  );
+  getElement<HTMLDivElement>("folder-tree").addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLButtonElement) || !target.dataset.folderId)
+        return;
+      selectedFolderId = target.dataset.folderId;
+      renderAll(data);
+    },
+  );
+  getElement<HTMLDivElement>("folder-tree").addEventListener(
+    "dragover",
+    (event) => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>(
+        ".folder-node",
+      );
+      if (!target) return;
+      event.preventDefault();
+      target.classList.add("drag-over");
+    },
+  );
+  getElement<HTMLDivElement>("folder-tree").addEventListener(
+    "dragleave",
+    (event) => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>(
+        ".folder-node",
+      );
+      target?.classList.remove("drag-over");
+    },
+  );
+  getElement<HTMLDivElement>("folder-tree").addEventListener(
+    "drop",
+    async (event) => {
+      event.preventDefault();
+      const target = (event.target as HTMLElement).closest<HTMLElement>(
+        ".folder-node",
+      );
+      const entryId = event.dataTransfer?.getData("text/memorize-entry");
+      const draggedFolderId = event.dataTransfer?.getData(
+        "text/memorize-folder",
+      );
+      target?.classList.remove("drag-over");
+      const destinationId = target?.dataset.folderId;
+      if (!destinationId) return;
+      if (draggedFolderId) {
+        try {
+          moveFolder(data, draggedFolderId, destinationId);
+          await chromeStorage.save(data);
+          renderAll(data);
+          setStatus("Dossier déplacé.", false);
+        } catch (error) {
+          setStatus(
+            error instanceof Error ? error.message : "Déplacement impossible.",
+            true,
+          );
+        }
+        return;
+      }
+      if (!entryId) return;
+      const sourceId = findAnyFolderForEntry(data, entryId);
+      if (!sourceId || sourceId === destinationId) return;
+      try {
+        moveEntry(data, entryId, sourceId, destinationId);
+        await chromeStorage.save(data);
+        renderAll(data);
+        setStatus("Mot déplacé.", false);
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : "Déplacement impossible.",
+          true,
+        );
+      }
+    },
+  );
+  getElement<HTMLInputElement>("vocabulary-search").addEventListener(
+    "input",
+    () => renderVocabulary(data),
+  );
+  bindFolderDialog(data);
+}
+
+function bindHistory(data: AppData): void {
   getElement<HTMLButtonElement>("clear-history").addEventListener(
     "click",
     async () => {
@@ -152,135 +315,107 @@ async function run(): Promise<void> {
         return;
       clearHistory(data);
       await chromeStorage.save(data);
-      renderAll(data);
-      setStatus(status, "Historique vidé.", false);
+      renderHistory(data);
+      setStatus("Historique vidé.", false);
     },
   );
+}
 
-  getElement<HTMLButtonElement>("add-folder").addEventListener(
+function bindTheme(data: AppData): void {
+  getElement<HTMLButtonElement>("theme-toggle").addEventListener(
     "click",
     async () => {
-      const name = getElement<HTMLInputElement>("new-folder-name");
-      const parent = getElement<HTMLSelectElement>("new-folder-parent");
-      try {
-        const folder = addFolder(data, name.value, target.value, parent.value);
-        selectedFolderId = folder.id;
-        name.value = "";
-        await chromeStorage.save(data);
-        renderAll(data);
-        setStatus(status, "Dossier créé.", false);
-      } catch (error) {
-        setStatus(
-          status,
-          error instanceof Error ? error.message : "Création impossible.",
-          true,
-        );
-      }
+      data.preferences.theme =
+        data.preferences.theme === "dark" ? "light" : "dark";
+      applyTheme(data.preferences.theme);
+      await chromeStorage.save(data);
     },
   );
+}
 
-  getElement<HTMLButtonElement>("rename-folder").addEventListener(
+function bindFolderDialog(data: AppData): void {
+  const dialog = getElement<HTMLDialogElement>("folder-dialog");
+  getElement<HTMLButtonElement>("folder-dialog-close").addEventListener(
     "click",
-    async () => {
-      if (!selectedFolderId) return;
-      try {
-        renameFolder(
-          data,
-          selectedFolderId,
-          getElement<HTMLInputElement>("folder-rename").value,
-        );
-        await chromeStorage.save(data);
-        renderAll(data);
-        setStatus(status, "Dossier renommé.", false);
-      } catch (error) {
-        setStatus(
-          status,
-          error instanceof Error ? error.message : "Renommage impossible.",
-          true,
-        );
-      }
-    },
+    () => dialog.close(),
   );
-
-  getElement<HTMLButtonElement>("delete-folder").addEventListener(
+  getElement<HTMLButtonElement>("folder-dialog-cancel").addEventListener(
     "click",
-    async () => {
-      if (
-        !selectedFolderId ||
-        !window.confirm(
-          "Supprimer ce dossier et ses sous-dossiers ? Le vocabulaire sera conservé.",
-        )
-      )
-        return;
+    () => dialog.close(),
+  );
+  getElement<HTMLFormElement>("folder-form").addEventListener(
+    "submit",
+    async (event) => {
+      event.preventDefault();
+      const name = getElement<HTMLInputElement>("folder-dialog-name").value;
       try {
-        deleteFolder(data, selectedFolderId);
-        selectedFolderId = ensureLanguageFolder(data, target.value).id;
+        if (folderDialogMode === "create") {
+          const parentId = getElement<HTMLSelectElement>(
+            "folder-dialog-parent",
+          ).value;
+          selectedFolderId = addFolder(
+            data,
+            name,
+            data.preferences.targetLanguage,
+            parentId,
+          ).id;
+        } else if (selectedFolderId) {
+          renameFolder(data, selectedFolderId, name);
+        }
         await chromeStorage.save(data);
+        dialog.close();
         renderAll(data);
         setStatus(
-          status,
-          "Dossier supprimé. Le vocabulaire a été conservé.",
+          folderDialogMode === "create" ? "Dossier créé." : "Dossier renommé.",
           false,
         );
       } catch (error) {
         setStatus(
-          status,
-          error instanceof Error ? error.message : "Suppression impossible.",
+          error instanceof Error ? error.message : "Opération impossible.",
           true,
         );
       }
     },
   );
+}
 
-  getElement<HTMLDivElement>("folder-tree").addEventListener(
-    "click",
-    (event) => {
-      const targetElement = event.target;
-      if (!(targetElement instanceof HTMLButtonElement)) return;
-      const folderId = targetElement.dataset.folderId;
-      if (!folderId) return;
-      selectedFolderId = folderId;
-      renderAll(data);
-    },
+function openFolderDialog(data: AppData, mode: FolderDialogMode): void {
+  folderDialogMode = mode;
+  const dialog = getElement<HTMLDialogElement>("folder-dialog");
+  getElement<HTMLHeadingElement>("folder-dialog-title").textContent =
+    mode === "create" ? "Nouveau dossier" : "Renommer le dossier";
+  getElement<HTMLParagraphElement>("folder-dialog-copy").textContent =
+    mode === "create"
+      ? "Classe tes mots dans un espace qui te ressemble."
+      : "Donne un nom plus juste à cet espace.";
+  const name = getElement<HTMLInputElement>("folder-dialog-name");
+  const selected = data.folders.find(
+    (folder) => folder.id === selectedFolderId,
   );
-
-  getElement<HTMLUListElement>("vocabulary").addEventListener(
-    "click",
-    async (event) => {
-      const targetElement = event.target;
-      if (
-        !(targetElement instanceof HTMLButtonElement) ||
-        !targetElement.dataset.entryId
-      )
-        return;
-      const destination = targetElement.parentElement?.querySelector("select");
-      if (!(destination instanceof HTMLSelectElement) || !selectedFolderId)
-        return;
-      const sourceFolderId = findEntryFolder(
-        data,
-        targetElement.dataset.entryId,
-        selectedFolderId,
-      );
-      if (!sourceFolderId) return;
-      try {
-        moveEntry(
-          data,
-          targetElement.dataset.entryId,
-          sourceFolderId,
-          destination.value,
-        );
-        await chromeStorage.save(data);
-        renderAll(data);
-        setStatus(status, "Élément déplacé.", false);
-      } catch (error) {
-        setStatus(
-          status,
-          error instanceof Error ? error.message : "Déplacement impossible.",
-          true,
-        );
-      }
-    },
-  );
+  name.value = mode === "rename" ? (selected?.name ?? "") : "";
+  const parentLabel = getElement<HTMLLabelElement>("folder-parent-label");
+  parentLabel.hidden = mode === "rename";
+  if (mode === "create") {
+    const parent = getElement<HTMLSelectElement>("folder-dialog-parent");
+    const folders = data.folders.filter(
+      (folder) => folder.language === data.preferences.targetLanguage,
+    );
+    parent.replaceChildren(
+      ...folders.map((folder) => {
+        const option = document.createElement("option");
+        option.value = folder.id;
+        option.textContent = `${"  ".repeat(folderDepth(data, folder.id))}${folder.name}`;
+        return option;
+      }),
+    );
+    if (
+      selectedFolderId &&
+      folders.some((folder) => folder.id === selectedFolderId)
+    )
+      parent.value = selectedFolderId;
+  }
+  dialog.showModal();
+  name.focus();
 }
 
 async function readSelection(): Promise<SelectionResponse> {
@@ -301,6 +436,19 @@ async function readSelection(): Promise<SelectionResponse> {
   }
 }
 
+function renderSelection(selection: SelectionResponse): void {
+  const element = getElement<HTMLDivElement>("selection");
+  element.replaceChildren();
+  const icon = document.createElement("span");
+  icon.className = "selection-icon";
+  icon.textContent = "⌁";
+  const text = document.createElement("span");
+  text.textContent = selection.text
+    ? `Sélection : « ${selection.text} »`
+    : "Aucune sélection détectée.";
+  element.append(icon, text);
+}
+
 function renderAll(data: AppData): void {
   const root =
     data.folders.find((folder) => folder.id === selectedFolderId) ??
@@ -311,15 +459,21 @@ function renderAll(data: AppData): void {
     );
   selectedFolderId = root?.id ?? null;
   renderFolderTree(data);
-  renderFolderControls(data);
-  renderVocabulary(data, root);
+  renderVocabulary(data);
   renderHistory(data);
+  const active = data.folders.find((folder) => folder.id === selectedFolderId);
+  getElement<HTMLElement>("active-folder-name").textContent =
+    active?.name ?? "Vocabulaire";
+  getElement<HTMLElement>("vocabulary-total").textContent =
+    `${active ? entriesInFolder(data, active.id).length : 0} mots`;
 }
 
 function renderFolderTree(data: AppData): void {
   const container = getElement<HTMLDivElement>("folder-tree");
   const roots = data.folders.filter(
-    (folder) => folder.parentId === ROOT_FOLDER_ID,
+    (folder) =>
+      folder.parentId === ROOT_FOLDER_ID &&
+      folder.language === data.preferences.targetLanguage,
   );
   container.replaceChildren(
     ...roots.map((folder) => renderFolderNode(data, folder)),
@@ -328,15 +482,26 @@ function renderFolderTree(data: AppData): void {
 
 function renderFolderNode(data: AppData, folder: Folder): HTMLDivElement {
   const wrapper = document.createElement("div");
+  wrapper.className = "folder-node";
+  wrapper.dataset.folderId = folder.id;
   const button = document.createElement("button");
   button.type = "button";
-  button.dataset.folderId = folder.id;
+  button.draggable = folder.parentId !== ROOT_FOLDER_ID;
   button.className =
-    folder.id === selectedFolderId ? "folder selected" : "folder";
-  button.textContent =
-    folder.parentId === ROOT_FOLDER_ID
-      ? `▾ ${folder.name}`
-      : `└ ${folder.name}`;
+    folder.id === selectedFolderId ? "folder-button selected" : "folder-button";
+  button.dataset.folderId = folder.id;
+  button.addEventListener("dragstart", (event) => {
+    if (folder.parentId === ROOT_FOLDER_ID) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer?.setData("text/memorize-folder", folder.id);
+  });
+  const dot = document.createElement("span");
+  dot.className = "folder-dot";
+  const text = document.createElement("span");
+  text.textContent = folder.name;
+  button.append(dot, text);
   wrapper.append(button);
   const children = data.folders.filter(
     (candidate) => candidate.parentId === folder.id,
@@ -352,113 +517,105 @@ function renderFolderNode(data: AppData, folder: Folder): HTMLDivElement {
   return wrapper;
 }
 
-function renderFolderControls(data: AppData): void {
-  const parentSelect = getElement<HTMLSelectElement>("new-folder-parent");
-  const languageFolders = data.folders.filter(
-    (folder) => folder.language === data.preferences.targetLanguage,
-  );
-  parentSelect.replaceChildren(
-    ...languageFolders.map((folder) => {
-      const option = document.createElement("option");
-      option.value = folder.id;
-      option.textContent = `${"  ".repeat(folderDepth(data, folder.id))}${folder.name}`;
-      return option;
-    }),
-  );
-  if (
-    selectedFolderId &&
-    languageFolders.some((folder) => folder.id === selectedFolderId)
-  )
-    parentSelect.value = selectedFolderId;
-  const selected = data.folders.find(
-    (folder) => folder.id === selectedFolderId,
-  );
-  const rename = getElement<HTMLInputElement>("folder-rename");
-  const isLanguageRoot = selected?.parentId === ROOT_FOLDER_ID;
-  rename.value = selected?.name ?? "";
-  rename.disabled = !selected || isLanguageRoot;
-  getElement<HTMLButtonElement>("rename-folder").disabled = rename.disabled;
-  getElement<HTMLButtonElement>("delete-folder").disabled =
-    !selected || isLanguageRoot;
-}
-
-function renderVocabulary(data: AppData, folder: Folder | undefined): void {
+function renderVocabulary(data: AppData): void {
   const list = getElement<HTMLUListElement>("vocabulary");
-  const entries = folder
-    ? entriesInFolder(data, folder.id).slice().reverse()
-    : [];
-  list.replaceChildren(
-    ...entries.map((entry) => renderVocabularyItem(data, entry, folder?.id)),
-  );
+  const query = getElement<HTMLInputElement>("vocabulary-search")
+    .value.trim()
+    .toLocaleLowerCase();
+  const folder = data.folders.find((item) => item.id === selectedFolderId);
+  const entries = (folder ? entriesInFolder(data, folder.id) : [])
+    .filter(
+      (entry) =>
+        !query ||
+        `${entry.original} ${entry.translation}`
+          .toLocaleLowerCase()
+          .includes(query),
+    )
+    .slice()
+    .reverse();
+  list.replaceChildren(...entries.map((entry) => renderVocabularyItem(entry)));
   if (!entries.length)
-    list.append(createEmptyItem("Aucun vocabulaire dans ce dossier."));
+    list.append(
+      createEmptyItem(
+        query
+          ? "Aucun résultat pour cette recherche."
+          : "Ce dossier est encore vide.",
+      ),
+    );
+  getElement<HTMLElement>("vocabulary-total").textContent =
+    `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
 }
 
-function renderVocabularyItem(
-  data: AppData,
-  entry: VocabularyEntry,
-  selectedId: string | undefined,
-): HTMLLIElement {
+function renderVocabularyItem(entry: VocabularyEntry): HTMLLIElement {
   const item = document.createElement("li");
-  const text = document.createElement("span");
-  text.textContent = `${entry.original} → ${entry.translation} (${entry.translatedCount})`;
-  item.append(text);
-  const sourceFolder = selectedId
-    ? findEntryFolder(data, entry.id, selectedId)
-    : undefined;
-  const destinations = data.folders.filter(
-    (folder) =>
-      folder.language === entry.targetLanguage && folder.id !== sourceFolder,
-  );
-  if (sourceFolder && destinations.length) {
-    const select = document.createElement("select");
-    select.setAttribute("aria-label", `Destination de ${entry.original}`);
-    select.append(
-      ...destinations.map((folder) => {
-        const option = document.createElement("option");
-        option.value = folder.id;
-        option.textContent = folder.name;
-        return option;
-      }),
-    );
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "secondary move-button";
-    button.dataset.entryId = entry.id;
-    button.textContent = "Déplacer";
-    item.append(select, button);
-  }
+  item.className = "vocabulary-card";
+  item.draggable = true;
+  item.dataset.entryId = entry.id;
+  item.addEventListener("dragstart", (event) => {
+    event.dataTransfer?.setData("text/memorize-entry", entry.id);
+    event.dataTransfer?.setData("text/plain", entry.original);
+    item.classList.add("dragging");
+  });
+  item.addEventListener("dragend", () => item.classList.remove("dragging"));
+  const main = document.createElement("div");
+  main.className = "entry-main";
+  const copy = document.createElement("div");
+  const original = document.createElement("div");
+  original.className = "entry-original";
+  original.textContent = entry.original;
+  const translation = document.createElement("div");
+  translation.className = "entry-translation";
+  translation.textContent = entry.translation;
+  copy.append(original, translation);
+  const arrow = document.createElement("span");
+  arrow.className = "entry-arrow";
+  arrow.textContent = "↗";
+  main.append(copy, arrow);
+  const meta = document.createElement("div");
+  meta.className = "entry-meta";
+  meta.textContent = `${entry.translatedCount} traductions · ${formatDate(entry.updatedAt)}`;
+  item.append(main, meta);
   return item;
 }
 
 function renderHistory(data: AppData): void {
   const list = getElement<HTMLUListElement>("history");
-  const history = data.history.slice(-10).reverse();
+  const history = data.history.slice(-30).reverse();
   list.replaceChildren(
     ...history.map((item) => {
       const entry = data.vocabulary.find(
         (candidate) => candidate.id === item.vocabularyId,
       );
       const element = document.createElement("li");
-      element.textContent = entry
-        ? `${entry.original} → ${entry.translation} · ${formatDate(item.translatedAt)}`
+      element.className = "history-item";
+      const text = document.createElement("span");
+      text.textContent = entry
+        ? `${entry.original} → ${entry.translation}`
         : "Vocabulaire supprimé";
+      const time = document.createElement("time");
+      time.textContent = formatDate(item.translatedAt);
+      element.append(text, time);
       return element;
     }),
   );
-  if (!history.length) list.append(createEmptyItem("Historique vide."));
+  if (!history.length)
+    list.append(createEmptyItem("Ton historique est encore vide."));
 }
 
-function findEntryFolder(
+function findAnyFolderForEntry(
   data: AppData,
   entryId: string,
-  selectedId: string,
 ): string | undefined {
-  return getDescendantFolderIds(data, selectedId).find((folderId) =>
-    data.folderEntries[folderId]?.includes(entryId),
+  return Object.entries(data.folderEntries).find(([, entries]) =>
+    entries.includes(entryId),
+  )?.[0];
+}
+function isLanguageFolder(data: AppData, folderId: string | null): boolean {
+  return Boolean(
+    data.folders.find((folder) => folder.id === folderId)?.parentId ===
+    ROOT_FOLDER_ID,
   );
 }
-
 function folderDepth(data: AppData, folderId: string): number {
   let depth = 0;
   let current = data.folders.find((folder) => folder.id === folderId);
@@ -468,7 +625,23 @@ function folderDepth(data: AppData, folderId: string): number {
   }
   return depth;
 }
-
+function applyTheme(theme: "light" | "dark"): void {
+  document.documentElement.dataset.theme = theme;
+  getElement<HTMLButtonElement>("theme-toggle").textContent =
+    theme === "dark" ? "☾" : "☼";
+}
+function activateView(view: ViewName): void {
+  document
+    .querySelectorAll<HTMLButtonElement>(".nav-button")
+    .forEach((button) =>
+      button.classList.toggle("active", button.dataset.view === view),
+    );
+  document
+    .querySelectorAll<HTMLElement>(".view-panel")
+    .forEach((panel) =>
+      panel.classList.toggle("hidden", panel.id !== `view-${view}`),
+    );
+}
 function createEmptyItem(text: string): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "muted";
@@ -496,11 +669,8 @@ function isSelectionResponse(value: unknown): value is SelectionResponse {
     typeof response.context === "string"
   );
 }
-function setStatus(
-  element: HTMLElement,
-  message: string,
-  error: boolean,
-): void {
+function setStatus(message: string, error: boolean): void {
+  const element = getElement<HTMLElement>("status");
   element.textContent = message;
   element.dataset.state = error ? "error" : "success";
 }

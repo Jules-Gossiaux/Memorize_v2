@@ -5,6 +5,7 @@ import {
   entriesInFolder,
   ensureLanguageFolder,
   moveEntry,
+  moveFolder,
   renameFolder,
   ROOT_FOLDER_ID,
 } from "./folders";
@@ -73,5 +74,17 @@ describe("folders", () => {
     expect(data.folders.some((folder) => folder.id === travel.id)).toBe(false);
     expect(data.folders.some((folder) => folder.id === cities.id)).toBe(false);
     expect(data.vocabulary).toHaveLength(1);
+  });
+
+  it("déplace un dossier dans un autre sans autoriser les cycles", () => {
+    const data = createEmptyData();
+    const fr = ensureLanguageFolder(data, "fr");
+    const travel = addFolder(data, "Voyage", "fr", fr.id);
+    const cities = addFolder(data, "Villes", "fr", fr.id);
+    moveFolder(data, cities.id, travel.id);
+    expect(
+      data.folders.find((folder) => folder.id === cities.id)?.parentId,
+    ).toBe(travel.id);
+    expect(() => moveFolder(data, travel.id, cities.id)).toThrow();
   });
 });

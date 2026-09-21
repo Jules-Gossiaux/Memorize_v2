@@ -4,7 +4,7 @@ Extension Chrome Manifest V3 pour traduire et mémoriser du vocabulaire depuis u
 
 ## État actuel
 
-Le dépôt contient le MVP du parcours principal : sélection depuis la page active, traduction via MyMemory, affichage du nombre d’essais, mémorisation explicite, sauvegarde locale versionnée, déduplication, dossier racine par langue, sous-dossiers, déplacement, renommage, suppression confirmée, historique et préférences. Quizlet et l’export restent à implémenter.
+Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, traduction via MyMemory, affichage du nombre d’essais, mémorisation explicite, sauvegarde locale versionnée, déduplication, dossier racine par langue, sous-dossiers, déplacement par glisser-déposer, renommage, suppression confirmée, recherche, thème clair/sombre, historique et préférences. Quizlet et l’export restent à implémenter.
 
 ## Installation et développement
 

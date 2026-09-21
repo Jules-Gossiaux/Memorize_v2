@@ -8,3 +8,4 @@
 - Ajout du parcours MVP sélection, traduction MyMemory, sauvegarde, déduplication et historique.
 - Séparation de la traduction et de la mémorisation avec statistiques d’essais persistantes.
 - Ajout des sous-dossiers, déplacements, renommages et suppressions confirmées sans suppression du vocabulaire global.
+- Refonte complète de la popup : navigation par vues, cartes de vocabulaire, recherche, thème clair/sombre et glisser-déposer.
