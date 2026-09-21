@@ -120,6 +120,12 @@ function bindTranslation(data: AppData): void {
         sourceLanguage: source.value,
         targetLanguage: target.value,
       };
+      data.preferences.sourceLanguage = request.sourceLanguage
+        .trim()
+        .toLowerCase();
+      data.preferences.targetLanguage = request.targetLanguage
+        .trim()
+        .toLowerCase();
       setBusy("translate", true, "Traduction…", "Traduire");
       try {
         const translation = await myMemoryTranslator.translate(request);
@@ -368,10 +374,13 @@ function bindFolderDialog(data: AppData): void {
           const parentId = getElement<HTMLSelectElement>(
             "folder-dialog-parent",
           ).value;
+          const folderLanguage = pendingTranslation?.request.targetLanguage
+            .trim()
+            .toLowerCase();
           const created = addFolder(
             data,
             name,
-            data.preferences.targetLanguage,
+            folderLanguage || data.preferences.targetLanguage,
             parentId,
           );
           selectedFolderId = created.id;
@@ -412,7 +421,11 @@ function bindFolderDialog(data: AppData): void {
   );
 }
 
-function openFolderDialog(data: AppData, mode: FolderDialogMode): void {
+function openFolderDialog(
+  data: AppData,
+  mode: FolderDialogMode,
+  language = data.preferences.targetLanguage,
+): void {
   folderDialogMode = mode;
   const dialog = getElement<HTMLDialogElement>("folder-dialog");
   getElement<HTMLHeadingElement>("folder-dialog-title").textContent =
@@ -437,7 +450,7 @@ function openFolderDialog(data: AppData, mode: FolderDialogMode): void {
     const parent = getElement<HTMLSelectElement>("folder-dialog-parent");
     const folders = data.folders.filter(
       (folder) =>
-        folder.language === data.preferences.targetLanguage &&
+        folder.language === language.trim().toLowerCase() &&
         !isSystemLanguageFolder(folder),
     );
     const rootOption = document.createElement("option");
@@ -671,12 +684,10 @@ function openMemorizeDialog(data: AppData): void {
   const language = pendingTranslation.request.targetLanguage
     .trim()
     .toLowerCase();
-  const folders = data.folders.filter(
-    (folder) => folder.language === language && !isSystemLanguageFolder(folder),
-  );
+  const folders = data.folders.filter((folder) => folder.language === language);
   if (!folders.length) {
     saveAfterFolderCreation = true;
-    openFolderDialog(data, "create");
+    openFolderDialog(data, "create", language);
     setStatus("Crée un dossier pour mémoriser cette traduction.", false);
     return;
   }
@@ -685,7 +696,10 @@ function openMemorizeDialog(data: AppData): void {
     ...folders.map((folder) => {
       const option = document.createElement("option");
       option.value = folder.id;
-      option.textContent = `${"  ".repeat(folderDepth(data, folder.id))}${folder.name}`;
+      const label = isSystemLanguageFolder(folder)
+        ? `Général · ${folder.name}`
+        : folder.name;
+      option.textContent = `${"  ".repeat(folderDepth(data, folder.id))}${label}`;
       return option;
     }),
   );
