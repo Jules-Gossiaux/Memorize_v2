@@ -13,6 +13,44 @@ export interface SaveTranslationResult {
   languageFolderId: string;
 }
 
+export function recordTranslationAttempt(
+  data: AppData,
+  request: TranslationRequest,
+): number {
+  const original = requiredText(request.text, "Le texte original");
+  const sourceLanguage = requiredText(
+    request.sourceLanguage,
+    "La langue source",
+  );
+  const targetLanguage = requiredText(
+    request.targetLanguage,
+    "La langue cible",
+  );
+  const id = vocabularyId(original, sourceLanguage, targetLanguage);
+  const existing = data.vocabulary.find((entry) => entry.id === id);
+  const next =
+    Math.max(data.translationStats[id] ?? 0, existing?.translatedCount ?? 0) +
+    1;
+  data.translationStats[id] = next;
+  return next;
+}
+
+export function getTranslationCount(
+  data: AppData,
+  request: TranslationRequest,
+): number {
+  const id = vocabularyId(
+    request.text,
+    request.sourceLanguage,
+    request.targetLanguage,
+  );
+  const existing = data.vocabulary.find((entry) => entry.id === id);
+  return Math.max(
+    data.translationStats[id] ?? 0,
+    existing?.translatedCount ?? 0,
+  );
+}
+
 function requiredText(value: string, field: string): string {
   const normalized = value.trim();
   if (!normalized) throw new Error(`${field} est obligatoire.`);
@@ -51,13 +89,17 @@ export function saveTranslation(
   const id = vocabularyId(original, sourceLanguage, targetLanguage);
   const existing = data.vocabulary.find((entry) => entry.id === id);
   const languageFolder = ensureLanguageFolder(data, targetLanguage, now);
+  const translatedCount = Math.max(
+    data.translationStats[id] ?? 1,
+    existing?.translatedCount ?? 0,
+  );
 
   if (existing) {
     existing.translation = translated;
     existing.url = url;
     existing.context = context;
     existing.updatedAt = now;
-    existing.translatedCount += 1;
+    existing.translatedCount = translatedCount;
     addHistory(data, existing.id, now);
     addToFolder(data, languageFolder.id, existing.id);
     return {
@@ -75,7 +117,7 @@ export function saveTranslation(
     targetLanguage,
     url,
     context,
-    translatedCount: 1,
+    translatedCount,
     createdAt: now,
     updatedAt: now,
   };

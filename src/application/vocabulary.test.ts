@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { saveTranslation } from "./vocabulary";
+import { recordTranslationAttempt, saveTranslation } from "./vocabulary";
 import { createEmptyData } from "../domain/model";
 
 const request = {
@@ -30,12 +30,14 @@ describe("saveTranslation", () => {
 
   it("met à jour l'entrée stable sans créer de doublon", () => {
     const data = createEmptyData();
+    recordTranslationAttempt(data, request);
     const first = saveTranslation(
       data,
       request,
       "bonjour",
       "2026-09-21T20:00:00.000Z",
     );
+    recordTranslationAttempt(data, { ...request, context: "New context" });
     const second = saveTranslation(
       data,
       { ...request, context: "New context" },

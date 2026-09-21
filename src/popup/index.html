@@ -19,9 +19,34 @@
           <input id="target" value="fr" maxlength="10" autocomplete="off"
         /></label>
       </div>
-      <button id="translate">Traduire et mémoriser</button>
+      <button id="translate">Traduire</button>
       <p id="translation" class="translation" aria-live="polite"></p>
+      <p id="translation-count" class="muted" aria-live="polite"></p>
+      <button id="memorize" disabled>Mémoriser cette traduction</button>
       <p id="status" role="status" aria-live="polite"></p>
+      <section aria-labelledby="folders-title">
+        <h2 id="folders-title">Dossiers</h2>
+        <div id="folder-tree" class="folder-tree" role="tree"></div>
+        <label
+          >Nouveau dossier
+          <input id="new-folder-name" maxlength="80" autocomplete="off"
+        /></label>
+        <label
+          >Dossier parent
+          <select id="new-folder-parent"></select
+        ></label>
+        <button id="add-folder" class="secondary">Créer le dossier</button>
+        <div class="folder-actions">
+          <label
+            >Renommer le dossier sélectionné
+            <input id="folder-rename" maxlength="80" autocomplete="off"
+          /></label>
+          <button id="rename-folder" class="secondary">Renommer</button>
+          <button id="delete-folder" class="danger">
+            Supprimer le dossier
+          </button>
+        </div>
+      </section>
       <section aria-labelledby="vocabulary-title">
         <h2 id="vocabulary-title">Vocabulaire récent</h2>
         <ul id="vocabulary" class="items"></ul>

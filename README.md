@@ -4,7 +4,7 @@ Extension Chrome Manifest V3 pour traduire et mémoriser du vocabulaire depuis u
 
 ## État actuel
 
-Le dépôt contient le MVP du parcours principal : sélection depuis la page active, traduction via MyMemory, sauvegarde locale versionnée, déduplication, compteur d’occurrences, dossier racine par langue, historique et préférences. Les fonctions avancées d’arborescence, Quizlet et export restent à implémenter.
+Le dépôt contient le MVP du parcours principal : sélection depuis la page active, traduction via MyMemory, affichage du nombre d’essais, mémorisation explicite, sauvegarde locale versionnée, déduplication, dossier racine par langue, sous-dossiers, déplacement, renommage, suppression confirmée, historique et préférences. Quizlet et l’export restent à implémenter.
 
 ## Installation et développement
 
@@ -32,4 +32,4 @@ Les dates sont des chaînes ISO 8601 en UTC. Les identifiants métier des dossie
 
 ## Limites connues
 
-La gestion complète de l’arborescence, Quizlet et l’export ne sont pas encore livrés. MyMemory est un service externe gratuit soumis à ses limites de quota et de disponibilité ; l’extension affiche une erreur et ne sauvegarde rien en cas d’échec. LibreTranslate reste optionnel et Reverso Context ne sera pas scrapé.
+Quizlet et l’export ne sont pas encore livrés. MyMemory est un service externe gratuit soumis à ses limites de quota et de disponibilité ; l’extension affiche une erreur et ne sauvegarde rien en cas d’échec. Une traduction réussie n’est pas mémorisée automatiquement : l’utilisateur doit cliquer sur « Mémoriser cette traduction ». LibreTranslate reste optionnel et Reverso Context ne sera pas scrapé.

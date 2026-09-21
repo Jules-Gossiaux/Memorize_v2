@@ -42,6 +42,7 @@ export interface AppData {
   vocabulary: VocabularyEntry[];
   folderEntries: Record<string, string[]>;
   history: HistoryItem[];
+  translationStats: Record<string, number>;
   preferences: Preferences;
 }
 
@@ -51,6 +52,7 @@ export const createEmptyData = (): AppData => ({
   vocabulary: [],
   folderEntries: {},
   history: [],
+  translationStats: {},
   preferences: { sourceLanguage: "en", targetLanguage: "fr", theme: "light" },
 });
 
