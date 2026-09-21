@@ -32,6 +32,10 @@ export function migrate(input: Partial<AppData>): AppData {
         ? input.folderEntries
         : {},
     history: Array.isArray(input.history) ? input.history : [],
+    translationStats:
+      input.translationStats && typeof input.translationStats === "object"
+        ? input.translationStats
+        : {},
     preferences: { ...empty.preferences, ...(input.preferences ?? {}) },
   };
 }
