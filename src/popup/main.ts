@@ -51,7 +51,7 @@ void run();
 
 async function run(): Promise<void> {
   const data = await chromeStorage.load();
-  selectedFolderId = null;
+  selectedFolderId = ROOT_FOLDER_ID;
   if (removeLegacyLanguageFolders(data)) await chromeStorage.save(data);
   applyTheme(data.preferences.theme);
   bindNavigation(data);
@@ -132,7 +132,7 @@ function bindTranslation(data: AppData): void {
       setBusy("translate", true, "Traduction…", "Traduire");
       try {
         const translation = await myMemoryTranslator.translate(request);
-        const count = recordTranslationAttempt(data, request);
+        const count = recordTranslationAttempt(data, request, translation);
         await chromeStorage.save(data);
         pendingTranslation = { request, translation };
         getElement<HTMLParagraphElement>("translation").textContent =
@@ -235,7 +235,7 @@ function bindFolders(data: AppData): void {
           return;
         try {
           deleteFolder(data, selectedFolderId);
-          selectedFolderId = null;
+          selectedFolderId = ROOT_FOLDER_ID;
           await chromeStorage.save(data);
           renderAll(data);
           setStatus("Dossier supprimé.", false);
@@ -256,9 +256,8 @@ function bindFolders(data: AppData): void {
       const target = (event.target as HTMLElement).closest<HTMLElement>(
         ".folder-node",
       );
-      if (!target) return;
       event.preventDefault();
-      target.classList.add("drag-over");
+      target?.classList.add("drag-over");
     },
   );
   getElement<HTMLDivElement>("folder-tree").addEventListener(
@@ -282,8 +281,7 @@ function bindFolders(data: AppData): void {
         "text/memorize-folder",
       );
       target?.classList.remove("drag-over");
-      const destinationId = target?.dataset.folderId;
-      if (!destinationId) return;
+      const destinationId = target?.dataset.folderId ?? ROOT_FOLDER_ID;
       if (draggedFolderId) {
         try {
           moveFolder(data, draggedFolderId, destinationId);
@@ -523,13 +521,34 @@ async function readSelection(): Promise<SelectionResponse> {
       : { text: "", url: tab.url ?? "", context: "" };
   } catch {
     try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["assets/content.js"],
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        func: () => {
+          const selectionObject = window.getSelection();
+          const text = selectionObject?.toString().trim() ?? "";
+          const parentText =
+            selectionObject?.anchorNode?.parentElement?.innerText ??
+            document.body?.innerText ??
+            "";
+          const index = parentText
+            .toLocaleLowerCase()
+            .indexOf(text.toLocaleLowerCase());
+          return {
+            text,
+            url: window.location.href,
+            context:
+              !text || !parentText
+                ? ""
+                : index < 0
+                  ? parentText.slice(0, 500)
+                  : parentText.slice(
+                      Math.max(0, index - 220),
+                      index + text.length + 220,
+                    ),
+          };
+        },
       });
-      const response = await chrome.tabs.sendMessage(tab.id, {
-        type: "memorize:get-selection",
-      });
+      const response = results.find((item) => item.result?.text)?.result;
       return isSelectionResponse(response)
         ? response
         : { text: "", url: tab.url ?? "", context: "" };
@@ -554,21 +573,25 @@ function renderSelection(selection: SelectionResponse): void {
 
 function renderAll(data: AppData): void {
   const root =
-    data.folders.find((folder) => folder.id === selectedFolderId) ??
-    data.folders.find(
-      (folder) =>
-        folder.language === data.preferences.targetLanguage &&
-        folder.parentId === ROOT_FOLDER_ID,
-    );
-  selectedFolderId = root?.id ?? null;
+    selectedFolderId === ROOT_FOLDER_ID
+      ? undefined
+      : (data.folders.find((folder) => folder.id === selectedFolderId) ??
+        data.folders.find(
+          (folder) =>
+            folder.language === data.preferences.targetLanguage &&
+            folder.parentId === ROOT_FOLDER_ID,
+        ));
+  if (selectedFolderId !== ROOT_FOLDER_ID)
+    selectedFolderId = root?.id ?? ROOT_FOLDER_ID;
   renderFolderTree(data);
   renderVocabulary(data);
   renderHistory(data);
   const active = data.folders.find((folder) => folder.id === selectedFolderId);
   getElement<HTMLElement>("active-folder-name").textContent =
-    active?.name ?? "Vocabulaire";
+    active?.name ??
+    (selectedFolderId === ROOT_FOLDER_ID ? "Racine" : "Vocabulaire");
   getElement<HTMLElement>("vocabulary-total").textContent =
-    `${active ? entriesInFolder(data, active.id).length : 0} mots`;
+    `${entriesInFolder(data, selectedFolderId ?? ROOT_FOLDER_ID).length} mots`;
 }
 
 function renderFolderTree(data: AppData): void {
@@ -578,9 +601,27 @@ function renderFolderTree(data: AppData): void {
       folder.parentId === ROOT_FOLDER_ID &&
       folder.language === data.preferences.targetLanguage,
   );
-  container.replaceChildren(
-    ...roots.map((folder) => renderFolderNode(data, folder)),
-  );
+  const root = document.createElement("div");
+  root.className = "folder-node root-node";
+  root.dataset.folderId = ROOT_FOLDER_ID;
+  const rootButton = document.createElement("button");
+  rootButton.type = "button";
+  rootButton.className =
+    selectedFolderId === ROOT_FOLDER_ID
+      ? "folder-button selected"
+      : "folder-button";
+  rootButton.dataset.folderId = ROOT_FOLDER_ID;
+  const rootDot = document.createElement("span");
+  rootDot.className = "folder-dot root-dot";
+  const rootText = document.createElement("span");
+  rootText.textContent = "Racine";
+  rootButton.append(rootDot, rootText);
+  root.append(rootButton);
+  const rootChildren = document.createElement("div");
+  rootChildren.className = "folder-children root-children";
+  rootChildren.append(...roots.map((folder) => renderFolderNode(data, folder)));
+  root.append(rootChildren);
+  container.replaceChildren(root);
 }
 
 function renderFolderNode(data: AppData, folder: Folder): HTMLDivElement {
@@ -645,7 +686,7 @@ function renderVocabulary(data: AppData): void {
     .value.trim()
     .toLocaleLowerCase();
   const folder = data.folders.find((item) => item.id === selectedFolderId);
-  const entries = (folder ? entriesInFolder(data, folder.id) : [])
+  const entries = entriesInFolder(data, folder?.id ?? ROOT_FOLDER_ID)
     .filter(
       (entry) =>
         !query ||
@@ -722,7 +763,9 @@ function renderHistory(data: AppData): void {
       const text = document.createElement("span");
       text.textContent = entry
         ? `${entry.original} → ${entry.translation}`
-        : "Vocabulaire supprimé";
+        : item.original
+          ? `${item.original} → ${item.translation ?? ""}`
+          : "Traduction supprimée du vocabulaire";
       const time = document.createElement("time");
       time.textContent = formatDate(item.translatedAt);
       element.append(text, time);

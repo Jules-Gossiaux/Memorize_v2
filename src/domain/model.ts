@@ -28,6 +28,8 @@ export interface HistoryItem {
   id: string;
   vocabularyId: string;
   translatedAt: string;
+  original?: string;
+  translation?: string;
 }
 
 export interface Preferences {

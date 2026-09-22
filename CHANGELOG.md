@@ -8,7 +8,7 @@
 - Ajout du parcours MVP sélection, traduction MyMemory, sauvegarde, déduplication et historique.
 - Séparation de la traduction et de la mémorisation avec statistiques d’essais persistantes.
 - Ajout des sous-dossiers, déplacements, renommages et suppressions confirmées avec suppression cohérente des mots contenus.
-- Les dossiers utilisateur peuvent maintenant être créés à la racine ; la mémorisation demande le dossier cible et la suppression d’un dossier ou d’un mot supprime les données associées.
+- Les dossiers utilisateur peuvent maintenant être créés à la racine ; la mémorisation demande le dossier cible et la suppression d’un dossier ou d’un mot conserve l’historique des traductions.
 - Interface de vocabulaire allégée et compteur de traductions rendu plus visible.
 - Ajout de l’export éditable TXT, CSV et APKG avec séparateur configurable et aperçu en direct.
 - Réinjection automatique du content script après rechargement de l’extension et nouvelle direction visuelle plus compacte.

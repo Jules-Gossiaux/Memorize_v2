@@ -120,6 +120,12 @@ button {
   font-size: 12px;
   margin: 8px 0;
 }
+#view-translate {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: start;
+  gap: 12px;
+}
 .status.error {
   color: var(--danger);
 }

@@ -81,8 +81,8 @@ describe("folders", () => {
     expect(data.folders.some((folder) => folder.id === travel.id)).toBe(false);
     expect(data.folders.some((folder) => folder.id === cities.id)).toBe(false);
     expect(data.vocabulary).toHaveLength(0);
-    expect(data.history).toHaveLength(0);
-    expect(data.translationStats.e1).toBeUndefined();
+    expect(data.history).toHaveLength(1);
+    expect(data.translationStats.e1).toBe(2);
     expect(fr.parentId).toBe(ROOT_FOLDER_ID);
   });
 
@@ -96,6 +96,10 @@ describe("folders", () => {
       data.folders.find((folder) => folder.id === cities.id)?.parentId,
     ).toBe(travel.id);
     expect(() => moveFolder(data, travel.id, cities.id)).toThrow();
+    moveFolder(data, cities.id, ROOT_FOLDER_ID);
+    expect(
+      data.folders.find((folder) => folder.id === cities.id)?.parentId,
+    ).toBe(ROOT_FOLDER_ID);
   });
 
   it("retire les anciens dossiers de langue sans perdre leurs mots", () => {

@@ -16,6 +16,8 @@ export interface SaveTranslationResult {
 export function recordTranslationAttempt(
   data: AppData,
   request: TranslationRequest,
+  translation = "",
+  now = new Date().toISOString(),
 ): number {
   const original = requiredText(request.text, "Le texte original");
   const sourceLanguage = requiredText(
@@ -32,6 +34,7 @@ export function recordTranslationAttempt(
     Math.max(data.translationStats[id] ?? 0, existing?.translatedCount ?? 0) +
     1;
   data.translationStats[id] = next;
+  addHistory(data, id, now, original, translation);
   return next;
 }
 
@@ -112,7 +115,6 @@ export function saveTranslation(
     existing.context = context;
     existing.updatedAt = now;
     existing.translatedCount = translatedCount;
-    addHistory(data, existing.id, now);
     addToFolder(data, destination.id, existing.id);
     return {
       entry: existing,
@@ -134,7 +136,6 @@ export function saveTranslation(
     updatedAt: now,
   };
   data.vocabulary.push(entry);
-  addHistory(data, entry.id, now);
   addToFolder(data, destination.id, entry.id);
   return { entry, created: true, languageFolderId: destination.id };
 }
@@ -147,8 +148,6 @@ export function deleteVocabularyEntry(data: AppData, entryId: string): void {
     data.folderEntries[folderId] = (data.folderEntries[folderId] ?? []).filter(
       (id) => id !== entryId,
     );
-  data.history = data.history.filter((item) => item.vocabularyId !== entryId);
-  delete data.translationStats[entryId];
 }
 
 export function clearHistory(data: AppData): void {
@@ -159,11 +158,15 @@ function addHistory(
   data: AppData,
   vocabularyIdValue: string,
   translatedAt: string,
+  original = "",
+  translation = "",
 ): void {
   const historyItem: HistoryItem = {
     id: crypto.randomUUID(),
     vocabularyId: vocabularyIdValue,
     translatedAt,
+    original,
+    translation,
   };
   data.history.push(historyItem);
 }

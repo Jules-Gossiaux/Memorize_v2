@@ -20,8 +20,9 @@ const request = {
 };
 
 describe("saveTranslation", () => {
-  it("crée un vocabulaire, un dossier de langue et un historique", () => {
+  it("crée un vocabulaire et un dossier de langue", () => {
     const data = createEmptyData();
+    recordTranslationAttempt(data, request, "bonjour");
     const result = saveTranslation(
       data,
       request,
@@ -39,14 +40,24 @@ describe("saveTranslation", () => {
 
   it("met à jour l'entrée stable sans créer de doublon", () => {
     const data = createEmptyData();
-    recordTranslationAttempt(data, request);
+    recordTranslationAttempt(
+      data,
+      request,
+      "bonjour",
+      "2026-09-21T20:00:00.000Z",
+    );
     const first = saveTranslation(
       data,
       request,
       "bonjour",
       "2026-09-21T20:00:00.000Z",
     );
-    recordTranslationAttempt(data, { ...request, context: "New context" });
+    recordTranslationAttempt(
+      data,
+      { ...request, context: "New context" },
+      "salut",
+      "2026-09-21T20:01:00.000Z",
+    );
     const second = saveTranslation(
       data,
       { ...request, context: "New context" },
@@ -58,6 +69,10 @@ describe("saveTranslation", () => {
     expect(data.vocabulary).toHaveLength(1);
     expect(data.vocabulary[0]?.translatedCount).toBe(2);
     expect(data.history).toHaveLength(2);
+    expect(data.history.map((item) => item.translation)).toEqual([
+      "bonjour",
+      "salut",
+    ]);
     expect(data.folderEntries[first.languageFolderId]).toEqual([
       first.entry.id,
     ]);
@@ -78,11 +93,12 @@ describe("saveTranslation", () => {
     const data = createEmptyData();
     ensureLanguageFolder(data, "fr");
     const folder = addFolder(data, "Voyage", "fr", ROOT_FOLDER_ID);
+    recordTranslationAttempt(data, request, "bonjour");
     const result = saveTranslation(data, request, "bonjour", folder.id);
     expect(data.folderEntries[folder.id]).toEqual([result.entry.id]);
     deleteVocabularyEntry(data, result.entry.id);
     expect(data.vocabulary).toHaveLength(0);
     expect(data.folderEntries[folder.id]).toEqual([]);
-    expect(data.history).toHaveLength(0);
+    expect(data.history).toHaveLength(1);
   });
 });

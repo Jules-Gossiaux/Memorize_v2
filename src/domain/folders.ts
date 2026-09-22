@@ -147,10 +147,6 @@ export function deleteFolder(data: AppData, folderId: string): void {
   for (const id of ids) delete data.folderEntries[id];
   data.folders = data.folders.filter((candidate) => !ids.has(candidate.id));
   data.vocabulary = data.vocabulary.filter((entry) => !entryIds.has(entry.id));
-  data.history = data.history.filter(
-    (item) => !entryIds.has(item.vocabularyId),
-  );
-  for (const entryId of entryIds) delete data.translationStats[entryId];
 }
 
 export function moveFolder(
@@ -160,7 +156,10 @@ export function moveFolder(
   now = new Date().toISOString(),
 ): void {
   const folder = getFolder(data, folderId);
-  const target = getFolder(data, targetParentId);
+  const target =
+    targetParentId === ROOT_FOLDER_ID
+      ? undefined
+      : getFolder(data, targetParentId);
   if (isLanguageFolder(folder))
     throw new Error("Un dossier de langue ne peut pas être déplacé.");
   if (
@@ -168,7 +167,7 @@ export function moveFolder(
     getDescendantFolderIds(data, folderId).includes(targetParentId)
   )
     throw new Error("Un dossier ne peut pas être déplacé dans lui-même.");
-  if (folder.language !== target.language)
+  if (target && folder.language !== target.language)
     throw new Error("Un dossier ne peut pas changer de langue.");
   if (
     data.folders.some(
@@ -192,8 +191,9 @@ export function moveEntry(
   if (!data.vocabulary.some((entry) => entry.id === entryId))
     throw new Error("Vocabulaire introuvable.");
   const from = getFolder(data, fromFolderId);
-  const to = getFolder(data, toFolderId);
-  if (from.language !== to.language)
+  const to =
+    toFolderId === ROOT_FOLDER_ID ? undefined : getFolder(data, toFolderId);
+  if (to && from.language !== to.language)
     throw new Error("Un élément ne peut pas changer de langue de dossier.");
   if (!data.folderEntries[fromFolderId]?.includes(entryId))
     throw new Error("L’élément n’appartient pas au dossier source.");
