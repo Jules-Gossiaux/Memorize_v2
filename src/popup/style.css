@@ -7,12 +7,12 @@
     -apple-system,
     sans-serif;
   color: #202722;
-  background: #f5f3ee;
-  --paper: #fffdfa;
-  --line: #dedbd3;
-  --muted: #747b74;
-  --soft: #eeece5;
-  --accent: #d97858;
+  background: #f3f1eb;
+  --paper: #fffefa;
+  --line: #d9d8d1;
+  --muted: #747972;
+  --soft: #ebeae4;
+  --accent: #d97555;
   --danger: #b64c3d;
 }
 :root[data-theme="dark"] {
@@ -46,6 +46,13 @@ select {
 }
 button {
   cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
 }
 #app {
   max-width: 480px;
@@ -135,12 +142,12 @@ button {
 .workspace {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 .hero-card,
 .result-card,
 .history-card {
-  padding: 18px;
+  padding: 20px;
 }
 .eyebrow,
 .section-kicker {
@@ -157,7 +164,7 @@ h1 {
 .hero-card h1 {
   font-family: inherit;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.08;
 }
 h2 {
   font-size: 17px;
@@ -225,6 +232,14 @@ select:focus {
   padding: 10px 14px;
   font-weight: 650;
   font-size: 12px;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+.primary-button:hover:not(:disabled),
+.save-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 86%, #000);
+  transform: translateY(-1px);
 }
 .primary-button:disabled,
 .save-button:disabled {
@@ -242,10 +257,10 @@ select:focus {
   color: var(--danger);
 }
 .result-card {
-  margin-top: 12px;
+  margin-top: 0;
 }
 .empty-result {
-  opacity: 0.78;
+  opacity: 1;
 }
 .translation {
   font-size: 23px;
