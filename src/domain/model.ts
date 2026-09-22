@@ -28,6 +28,8 @@ export interface HistoryItem {
   id: string;
   vocabularyId: string;
   translatedAt: string;
+  original?: string;
+  translation?: string;
 }
 
 export interface Preferences {
@@ -42,6 +44,7 @@ export interface AppData {
   vocabulary: VocabularyEntry[];
   folderEntries: Record<string, string[]>;
   history: HistoryItem[];
+  translationStats: Record<string, number>;
   preferences: Preferences;
 }
 
@@ -51,7 +54,8 @@ export const createEmptyData = (): AppData => ({
   vocabulary: [],
   folderEntries: {},
   history: [],
-  preferences: { sourceLanguage: "auto", targetLanguage: "fr", theme: "light" },
+  translationStats: {},
+  preferences: { sourceLanguage: "en", targetLanguage: "fr", theme: "light" },
 });
 
 export const vocabularyId = (
