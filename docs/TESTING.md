@@ -6,4 +6,6 @@ Le test manuel est : sélectionner un mot de moins de 500 octets sur une page HT
 
 Depuis un ou plusieurs dossiers contenant des mots, ouvrir « Exporter », vérifier que le compteur et l’aperçu changent en cochant/décochant les dossiers, modifier l’aperçu, tester les séparateurs virgule, point-virgule, tabulation et personnalisé, copier l’aperçu, télécharger un TXT et un CSV (format `"word", "translation"`), puis télécharger un APKG et l’ouvrir dans Anki. Après mémorisation, vérifier que la popup reste sur l’onglet Traduire et qu’aucun dossier de langue n’a été créé automatiquement.
 
+Sur une page HTTP(S), sélectionner un mot, faire clic droit, choisir « Traduire avec Memorize », puis vérifier qu’une fenêtre s’ouvre avec la traduction lancée et que le bouton de mémorisation reste optionnel.
+
 Les tests d’intégration Chrome et end-to-end automatisés restent à ajouter.

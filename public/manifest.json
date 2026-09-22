@@ -3,7 +3,7 @@
   "name": "Memorize",
   "version": "0.1.0",
   "description": "Traduisez et mémorisez du vocabulaire depuis le web.",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "scripting", "contextMenus"],
   "host_permissions": ["<all_urls>", "https://api.mymemory.translated.net/*"],
   "action": {
     "default_title": "Memorize",

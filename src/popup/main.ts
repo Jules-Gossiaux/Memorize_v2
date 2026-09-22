@@ -43,6 +43,7 @@ let pendingTranslation: {
   request: TranslationRequest;
   translation: string;
 } | null = null;
+let pendingSelection: SelectionResponse | null = null;
 let folderDialogMode: FolderDialogMode = "create";
 let saveAfterFolderCreation = false;
 let exportFolderIds = new Set<string>();
@@ -61,8 +62,15 @@ async function run(): Promise<void> {
   bindTheme(data);
   renderAll(data);
 
-  const selection = await readSelection();
+  pendingSelection = await readPendingSelection();
+  const selection = pendingSelection ?? (await readSelection());
   renderSelection(selection);
+  if (pendingSelection?.text) {
+    window.setTimeout(
+      () => getElement<HTMLButtonElement>("translate").click(),
+      0,
+    );
+  }
 }
 
 function bindNavigation(data: AppData): void {
@@ -98,24 +106,11 @@ function bindTranslation(data: AppData): void {
       target.value = value;
     },
   );
-  getElement<HTMLButtonElement>("save-preferences").addEventListener(
-    "click",
-    async () => {
-      const sourceLanguage = source.value.trim().toLowerCase();
-      const targetLanguage = target.value.trim().toLowerCase();
-      if (!sourceLanguage || !targetLanguage)
-        return setStatus("Les deux langues sont obligatoires.", true);
-      data.preferences.sourceLanguage = sourceLanguage;
-      data.preferences.targetLanguage = targetLanguage;
-      await chromeStorage.save(data);
-      renderAll(data);
-      setStatus("Langues enregistrées.", false);
-    },
-  );
   getElement<HTMLButtonElement>("translate").addEventListener(
     "click",
     async () => {
-      let selection = await readSelection();
+      let selection = pendingSelection ?? (await readSelection());
+      pendingSelection = null;
       for (let attempt = 0; !selection.text && attempt < 2; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 60));
         selection = await readSelection();
@@ -143,6 +138,8 @@ function bindTranslation(data: AppData): void {
           translation;
         getElement<HTMLElement>("translation-count-number").textContent =
           String(count);
+        getElement<HTMLElement>("translation-count").classList.remove("hidden");
+        getElement<HTMLButtonElement>("memorize").classList.remove("hidden");
         getElement<HTMLButtonElement>("memorize").disabled = false;
         getElement<HTMLDivElement>("translation-result").classList.remove(
           "empty-result",
@@ -150,7 +147,10 @@ function bindTranslation(data: AppData): void {
         const badge = document.querySelector<HTMLElement>(
           "#translation-result .result-badge",
         );
-        if (badge) badge.textContent = "Prêt à mémoriser";
+        if (badge) {
+          badge.textContent = "Prêt à mémoriser";
+          badge.classList.remove("hidden");
+        }
         setStatus("Belle découverte. À toi de décider si tu la gardes.", false);
       } catch (error) {
         setStatus(
@@ -559,6 +559,13 @@ async function readSelection(): Promise<SelectionResponse> {
       return { text: "", url: tab.url ?? "", context: "" };
     }
   }
+}
+
+async function readPendingSelection(): Promise<SelectionResponse | null> {
+  const stored = await chrome.storage.local.get("memorize:pending-selection");
+  await chrome.storage.local.remove("memorize:pending-selection");
+  const value = stored["memorize:pending-selection"];
+  return isSelectionResponse(value) && value.text ? value : null;
 }
 
 function renderSelection(selection: SelectionResponse): void {

@@ -4,6 +4,8 @@ Memorize est une extension locale-first. Le domaine manipule `AppData`, les port
 
 Le popup peut réinjecter le content script avec `chrome.scripting` lorsque l’extension a été rechargée alors que l’onglet était déjà ouvert. Cela évite de devoir recharger manuellement chaque page après un build de développement ; `activeTab` et `scripting` restent limités à l’action initiée par l’utilisateur.
 
+Le service worker crée aussi le menu contextuel « Traduire avec Memorize ». La sélection est transmise via un état temporaire de `chrome.storage.local`, puis le popup secondaire la consomme et lance automatiquement la traduction.
+
 La traduction est un port applicatif (`Translator`) et non une dépendance directe de l’interface. Le premier adaptateur cible MyMemory via son endpoint public, depuis un contexte d’extension autorisé. Les réponses sont validées avant d’entrer dans le domaine ; une erreur réseau, un quota épuisé ou une réponse vide ne peut pas créer de vocabulaire. Une traduction réussie enregistre uniquement une statistique d’essai ; `saveTranslation` est appelé séparément par l’action explicite de mémorisation et rattache alors l’entrée au dossier choisi et à l’historique.
 
 Les anciennes racines de langue sont migrées vers une hiérarchie utilisateur. Les dossiers peuvent être créés à la racine ou dans une autre langue identique ; ils utilisent des identifiants indépendants de leur nom, peuvent être imbriqués, déplacés et renommés. La suppression d’un dossier supprime sa descendance et ses mots, mais conserve l’historique des traductions et les statistiques. `entriesInFolder` parcourt toute la descendance et déduplique les entrées.

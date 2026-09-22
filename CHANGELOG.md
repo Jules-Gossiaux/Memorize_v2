@@ -13,4 +13,5 @@
 - Ajout de l’export éditable TXT, CSV et APKG avec séparateur configurable et aperçu en direct.
 - Réinjection automatique du content script après rechargement de l’extension et nouvelle direction visuelle plus compacte.
 - Suppression du dossier de langue automatique, actions de dossier directement visibles, export multi-dossiers en temps réel et parcours Traduire compacté.
+- Ajout du menu contextuel « Traduire avec Memorize » et simplification de l’état vide de traduction.
 - Refonte complète de la popup : navigation par vues, cartes de vocabulaire, recherche, thème clair/sombre et glisser-déposer.
