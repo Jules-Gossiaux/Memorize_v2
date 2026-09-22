@@ -4,7 +4,7 @@ Extension Chrome Manifest V3 pour traduire et mémoriser du vocabulaire depuis u
 
 ## État actuel
 
-Le dépôt contient le socle initial : TypeScript strict, build Vite, stockage local versionné, modèle de dossiers/vocabulaire, service worker, content script, popup de préférences et tests unitaires de la logique de dossiers. La traduction externe et l’interface complète restent à implémenter.
+Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, traduction via MyMemory, compteur visible des traductions, mémorisation explicite dans le dossier choisi, sauvegarde locale versionnée, déduplication, dossiers utilisateur à la racine ou imbriqués, déplacement par glisser-déposer, renommage, suppression confirmée des dossiers et de leurs mots, recherche, thème clair/sombre, historique, préférences et export TXT/CSV/APKG éditable.
 
 ## Installation et développement
 
@@ -15,6 +15,8 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+Pour le développement continu de l’extension, utilisez `npm run dev:extension`. Vite reconstruit `dist/` après chaque modification ; actualisez ensuite l’extension dans `chrome://extensions`.
 
 Pour charger l’extension : exécutez `npm run build`, ouvrez `chrome://extensions`, activez le mode développeur, puis chargez le dossier `dist/`.
 
@@ -30,4 +32,4 @@ Les dates sont des chaînes ISO 8601 en UTC. Les identifiants métier des dossie
 
 ## Limites connues
 
-La traduction, la gestion complète de l’arborescence, l’historique visible, Quizlet, l’export et la CI sont prévus mais ne sont pas encore livrés. Le fournisseur de traduction devra être ajouté derrière `Translator`, avec validation stricte des réponses et gestion des secrets côté serveur si nécessaire.
+Quizlet et l’export ne sont pas encore livrés. MyMemory est un service externe gratuit soumis à ses limites de quota et de disponibilité ; l’extension affiche une erreur et ne sauvegarde rien en cas d’échec. Une traduction réussie n’est pas mémorisée automatiquement : l’utilisateur doit cliquer sur « Mémoriser cette traduction ». LibreTranslate reste optionnel et Reverso Context ne sera pas scrapé.
