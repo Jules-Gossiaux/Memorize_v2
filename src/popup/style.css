@@ -6,36 +6,36 @@
     system-ui,
     -apple-system,
     sans-serif;
-  color: #202124;
-  background: #f8f8f6;
-  --paper: #fff;
-  --line: #e5e5e1;
-  --muted: #73736e;
-  --soft: #f1f1ed;
-  --accent: #3856d8;
-  --danger: #b42318;
+  color: #202722;
+  background: #f5f3ee;
+  --paper: #fffdfa;
+  --line: #dedbd3;
+  --muted: #747b74;
+  --soft: #eeece5;
+  --accent: #d97858;
+  --danger: #b64c3d;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   color: #f4f4f0;
-  background: #171816;
-  --paper: #20221f;
-  --line: #383a35;
-  --muted: #aaada5;
-  --soft: #2b2d29;
-  --accent: #9eafff;
+  background: #0d1512;
+  --paper: #14211c;
+  --line: #31453b;
+  --muted: #a8b5ad;
+  --soft: #1b2a24;
+  --accent: #f49a78;
   --danger: #ff9b91;
 }
 * {
   box-sizing: border-box;
 }
 html {
-  width: 580px;
-  min-width: 580px;
+  width: 480px;
+  min-width: 480px;
 }
 body {
   margin: 0;
-  width: 580px;
+  width: 480px;
   min-height: 620px;
   background: inherit;
 }
@@ -48,7 +48,7 @@ button {
   cursor: pointer;
 }
 #app {
-  max-width: 580px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 26px 32px 32px;
 }
@@ -147,6 +147,11 @@ h1 {
   font-size: 30px;
   letter-spacing: -0.04em;
   margin: 10px 0 8px;
+}
+.hero-card h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  line-height: 1.05;
 }
 h2 {
   font-size: 17px;

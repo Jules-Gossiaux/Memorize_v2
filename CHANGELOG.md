@@ -11,4 +11,5 @@
 - Les dossiers utilisateur peuvent maintenant être créés à la racine ; la mémorisation demande le dossier cible et la suppression d’un dossier ou d’un mot supprime les données associées.
 - Interface de vocabulaire allégée et compteur de traductions rendu plus visible.
 - Ajout de l’export éditable TXT, CSV et APKG avec séparateur configurable et aperçu en direct.
+- Réinjection automatique du content script après rechargement de l’extension et nouvelle direction visuelle plus compacte.
 - Refonte complète de la popup : navigation par vues, cartes de vocabulaire, recherche, thème clair/sombre et glisser-déposer.

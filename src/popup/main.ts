@@ -499,7 +499,20 @@ async function readSelection(): Promise<SelectionResponse> {
       ? response
       : { text: "", url: tab.url ?? "", context: "" };
   } catch {
-    return { text: "", url: tab.url ?? "", context: "" };
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["assets/content.js"],
+      });
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: "memorize:get-selection",
+      });
+      return isSelectionResponse(response)
+        ? response
+        : { text: "", url: tab.url ?? "", context: "" };
+    } catch {
+      return { text: "", url: tab.url ?? "", context: "" };
+    }
   }
 }
 
