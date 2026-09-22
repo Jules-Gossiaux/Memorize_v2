@@ -115,7 +115,11 @@ function bindTranslation(data: AppData): void {
   getElement<HTMLButtonElement>("translate").addEventListener(
     "click",
     async () => {
-      const selection = await readSelection();
+      let selection = await readSelection();
+      for (let attempt = 0; !selection.text && attempt < 2; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        selection = await readSelection();
+      }
       if (!selection.text)
         return setStatus("Sélectionne un mot ou une phrase sur la page.", true);
       const request: TranslationRequest = {
@@ -516,9 +520,8 @@ async function readSelection(): Promise<SelectionResponse> {
     const response = await chrome.tabs.sendMessage(tab.id, {
       type: "memorize:get-selection",
     });
-    return isSelectionResponse(response)
-      ? response
-      : { text: "", url: tab.url ?? "", context: "" };
+    if (isSelectionResponse(response) && response.text) return response;
+    throw new Error("Selection indisponible dans le content script.");
   } catch {
     try {
       const results = await chrome.scripting.executeScript({

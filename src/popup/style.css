@@ -135,7 +135,7 @@ button {
 .workspace {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
 }
 .hero-card,
 .result-card,
@@ -155,9 +155,9 @@ h1 {
   margin: 10px 0 8px;
 }
 .hero-card h1 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 500;
-  line-height: 1.05;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1.1;
 }
 h2 {
   font-size: 17px;
@@ -173,7 +173,7 @@ h2 {
 }
 .selection-card {
   background: var(--soft);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 12px;
   margin: 10px 0;
   font-size: 12px;
@@ -199,7 +199,7 @@ input,
 select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 6px;
   background: var(--paper);
   color: inherit;
   padding: 9px 10px;
