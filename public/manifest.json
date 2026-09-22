@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Traduisez et mémorisez du vocabulaire depuis le web.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://api.mymemory.translated.net/*"],
   "action": {
     "default_title": "Memorize",
     "default_popup": "src/popup/index.html"
@@ -13,6 +14,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["assets/content.js"],
+      "all_frames": true,
       "run_at": "document_idle"
     }
   ],
