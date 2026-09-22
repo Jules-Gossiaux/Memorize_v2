@@ -19,8 +19,8 @@ import {
 import {
   createAnkiPackage,
   downloadBlob,
-  parseSerializedEntries,
   serializeEntries,
+  type AnkiCardDirection,
   type ExportFormat,
 } from "../application/export";
 import {
@@ -891,8 +891,12 @@ function bindExportDialog(data: AppData): void {
       const format = getElement<HTMLSelectElement>("export-format")
         .value as ExportFormat;
       getElement<HTMLElement>("delimiter-label").hidden = format === "apkg";
+      getElement<HTMLElement>("anki-cards-label").hidden = format !== "apkg";
       updateExportPreview(data);
     },
+  );
+  getElement<HTMLSelectElement>("anki-cards").addEventListener("change", () =>
+    updateExportPreview(data),
   );
   getElement<HTMLSelectElement>("export-delimiter").addEventListener(
     "change",
@@ -940,22 +944,23 @@ function bindExportDialog(data: AppData): void {
           "Sélectionne au moins un dossier contenant un mot.",
           true,
         );
-      if (format === "apkg") {
-        const packageData = await createAnkiPackage(
-          parseSerializedEntries(
-            getElement<HTMLTextAreaElement>("export-preview").value,
-            getExportDelimiter(format),
-            entries,
-          ),
-        );
-        downloadBlob(packageData, "memorize-export.apkg", "application/zip");
-      } else {
-        const text = getElement<HTMLTextAreaElement>("export-preview").value;
-        downloadBlob(
-          text,
-          `memorize-export.${format}`,
-          "text/plain;charset=utf-8",
-        );
+      try {
+        if (format === "apkg") {
+          const cardDirection = getElement<HTMLSelectElement>("anki-cards")
+            .value as AnkiCardDirection;
+          const packageData = await createAnkiPackage(entries, cardDirection);
+          downloadBlob(packageData, "memorize-export.apkg", "application/zip");
+        } else {
+          const text = getElement<HTMLTextAreaElement>("export-preview").value;
+          downloadBlob(
+            text,
+            `memorize-export.${format}`,
+            "text/plain;charset=utf-8",
+          );
+        }
+      } catch {
+        setStatus("Impossible de générer ce fichier d’export.", true);
+        return;
       }
       close();
       setStatus("Export téléchargé.", false);
@@ -982,8 +987,10 @@ function openExportDialog(data: AppData): void {
     }),
   );
   getElement<HTMLSelectElement>("export-format").value = "txt";
+  getElement<HTMLSelectElement>("anki-cards").value = "both";
   getElement<HTMLSelectElement>("export-delimiter").value = ",";
   getElement<HTMLElement>("delimiter-label").hidden = false;
+  getElement<HTMLElement>("anki-cards-label").hidden = true;
   getElement<HTMLElement>("custom-delimiter-label").classList.add("hidden");
   updateExportPreview(data);
   getElement<HTMLDialogElement>("export-dialog").showModal();
@@ -999,11 +1006,28 @@ function updateExportPreview(data: AppData): void {
   const isAnkiPackage = format === "apkg";
   preview.readOnly = isAnkiPackage;
   copyButton.hidden = isAnkiPackage;
+  getElement<HTMLElement>("anki-cards-label").hidden = !isAnkiPackage;
+  getElement<HTMLElement>("export-preview-label").textContent = isAnkiPackage
+    ? "Contenu du paquet"
+    : "Aperçu modifiable";
   preview.value = isAnkiPackage
-    ? `Un paquet Anki sera généré au téléchargement.\n\n${entries.length} ${entries.length === 1 ? "carte" : "cartes"} avec les champs Word et Translation.`
+    ? getAnkiPreview(entries)
     : serializeEntries(entries, delimiter, format === "csv");
   getElement<HTMLElement>("export-count").textContent =
     `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
+}
+
+function getAnkiPreview(entries: VocabularyEntry[]): string {
+  const direction = getElement<HTMLSelectElement>("anki-cards").value;
+  const rows = entries.slice(0, 12).map((entry) => {
+    if (direction === "word-to-translation")
+      return `Recto : ${entry.original}\nVerso : ${entry.translation}`;
+    if (direction === "translation-to-word")
+      return `Recto : ${entry.translation}\nVerso : ${entry.original}`;
+    return `Recto : ${entry.original}\nVerso : ${entry.translation}\n\nRecto : ${entry.translation}\nVerso : ${entry.original}`;
+  });
+  const suffix = entries.length > 12 ? "\n\n…" : "";
+  return `${rows.join("\n\n")} ${suffix}`.trim();
 }
 
 function getExportDelimiter(format: ExportFormat): string {

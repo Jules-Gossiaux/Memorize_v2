@@ -267,6 +267,13 @@
               <option value="custom">Personnalisé</option>
             </select></label
           >
+          <label id="anki-cards-label" hidden
+            >Cartes Anki<select id="anki-cards">
+              <option value="both">Deux sens</option>
+              <option value="word-to-translation">Mot → traduction</option>
+              <option value="translation-to-word">Traduction → mot</option>
+            </select></label
+          >
         </div>
         <label id="custom-delimiter-label" class="hidden"
           >Caractère personnalisé<input
@@ -275,7 +282,7 @@
             placeholder="|"
         /></label>
         <div class="preview-heading">
-          <span>Aperçu modifiable</span
+          <span id="export-preview-label">Aperçu modifiable</span
           ><span id="export-count" class="muted">0 mots</span>
         </div>
         <textarea id="export-preview" spellcheck="false"></textarea>

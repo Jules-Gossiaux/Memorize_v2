@@ -4,6 +4,8 @@ import type { VocabularyEntry } from "../domain/model";
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 
 export type ExportFormat = "txt" | "csv" | "apkg";
+export type AnkiCardDirection =
+  "both" | "word-to-translation" | "translation-to-word";
 
 export function serializeEntries(
   entries: VocabularyEntry[],
@@ -91,6 +93,7 @@ function escapeField(
 
 export async function createAnkiPackage(
   entries: VocabularyEntry[],
+  direction: AnkiCardDirection = "both",
 ): Promise<Uint8Array> {
   const SQL = await initSqlJs({
     locateFile: () => wasmUrl,
@@ -100,7 +103,15 @@ export async function createAnkiPackage(
   const modelId = now * 1000 + 1;
   const deckId = now * 1000 + 2;
   const fields = ["Word", "Translation"];
-  const templateBack = "{{Translation}}";
+  const templates =
+    direction === "word-to-translation"
+      ? [{ qfmt: "{{Word}}", answer: "{{Translation}}" }]
+      : direction === "translation-to-word"
+        ? [{ qfmt: "{{Translation}}", answer: "{{Word}}" }]
+        : [
+            { qfmt: "{{Word}}", answer: "{{Translation}}" },
+            { qfmt: "{{Translation}}", answer: "{{Word}}" },
+          ];
   const model = JSON.stringify({
     [modelId]: {
       id: modelId,
@@ -110,14 +121,12 @@ export async function createAnkiPackage(
       usn: -1,
       sortf: 0,
       did: deckId,
-      tmpls: [
-        {
-          name: "Card 1",
-          ord: 0,
-          qfmt: "{{Word}}",
-          afmt: `{{FrontSide}}<hr id=answer>${templateBack}`,
-        },
-      ],
+      tmpls: templates.map((template, ord) => ({
+        name: ord === 0 ? "Word → Translation" : "Translation → Word",
+        ord,
+        qfmt: template.qfmt,
+        afmt: `{{FrontSide}}<hr id=answer>${template.answer}`,
+      })),
       flds: fields.map((name, ord) => ({
         name,
         ord,
@@ -130,7 +139,7 @@ export async function createAnkiPackage(
       latexPre: "",
       latexPost: "",
       latexsvg: false,
-      req: [[0, "all", [0]]],
+      req: templates.map((_, ord) => [ord, "all", [ord === 0 ? 0 : 1]]),
       tags: [],
       vers: [],
     },
@@ -179,10 +188,13 @@ export async function createAnkiPackage(
       flds,
       entry.original,
     ]);
-    db.run(
-      "INSERT INTO cards VALUES (?, ?, ?, 0, ?, -1, 0, 0, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, '')",
-      [noteId, noteId, deckId, now, index + 1],
-    );
+    templates.forEach((_, templateIndex) => {
+      const cardId = noteId * 10 + templateIndex;
+      db.run(
+        "INSERT INTO cards VALUES (?, ?, ?, ?, ?, -1, 0, 0, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, '')",
+        [cardId, noteId, deckId, templateIndex, now, index + 1],
+      );
+    });
   });
   const collection = db.export();
   db.close();
@@ -201,6 +213,8 @@ export function downloadBlob(
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
+  document.body.append(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
