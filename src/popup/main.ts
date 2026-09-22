@@ -58,6 +58,7 @@ async function run(): Promise<void> {
   applyTheme(data.preferences.theme);
   bindNavigation(data);
   bindTranslation(data);
+  bindSelectionUpdates();
   bindFolders(data);
   bindHistory(data);
   bindTheme(data);
@@ -175,6 +176,17 @@ function bindTranslation(data: AppData): void {
       openMemorizeDialog(data);
     },
   );
+}
+
+function bindSelectionUpdates(): void {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type !== "memorize:selection-changed") return;
+    const selection = message.selection;
+    if (!isSelectionResponse(selection) || !selection.text) return;
+    pendingSelection = selection;
+    renderSelection(selection);
+    setStatus("Sélection prête.", false);
+  });
 }
 
 function bindFolders(data: AppData): void {
@@ -575,6 +587,7 @@ async function readPendingSelection(): Promise<SelectionResponse | null> {
 }
 
 function renderSelection(selection: SelectionResponse): void {
+  applyDetectedLanguage(selection.text);
   const element = getElement<HTMLDivElement>("selection");
   element.replaceChildren();
   const icon = document.createElement("span");
@@ -585,6 +598,20 @@ function renderSelection(selection: SelectionResponse): void {
     ? `Sélection : « ${selection.text} »`
     : "Aucune sélection détectée.";
   element.append(icon, text);
+}
+
+function applyDetectedLanguage(text: string): void {
+  const detectedLanguage = detectLanguage(text);
+  if (!detectedLanguage) return;
+  const source = getElement<HTMLInputElement>("source");
+  const target = getElement<HTMLInputElement>("target");
+  let sourceLanguage = source.value.trim().toLowerCase();
+  let targetLanguage = target.value.trim().toLowerCase();
+  if (detectedLanguage === targetLanguage)
+    [sourceLanguage, targetLanguage] = [targetLanguage, sourceLanguage];
+  else sourceLanguage = detectedLanguage;
+  source.value = sourceLanguage;
+  target.value = targetLanguage;
 }
 
 function renderAll(data: AppData): void {

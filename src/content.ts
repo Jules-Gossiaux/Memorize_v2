@@ -11,6 +11,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
+let selectionTimer: number | undefined;
+document.addEventListener("selectionchange", () => {
+  window.clearTimeout(selectionTimer);
+  selectionTimer = window.setTimeout(() => {
+    const selectionObject = window.getSelection();
+    const text = selectionObject?.toString().trim() ?? "";
+    if (!text) return;
+    void chrome.runtime
+      .sendMessage({
+        type: "memorize:selection-changed",
+        selection: {
+          text,
+          url: window.location.href,
+          context: getSelectionContext(selectionObject, text),
+        },
+      })
+      .catch(() => undefined);
+  }, 80);
+});
+
 function getSelectionContext(
   selection: Selection | null,
   text: string,

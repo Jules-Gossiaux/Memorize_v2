@@ -1,11 +1,14 @@
 function setupContextMenu(): void {
-  chrome.contextMenus.removeAll().then(() => {
-    chrome.contextMenus.create({
-      id: "memorize-translate-selection",
-      title: "Traduire avec Memorize",
-      contexts: ["selection"],
-    });
-  });
+  void chrome.contextMenus
+    .removeAll()
+    .then(() => {
+      chrome.contextMenus.create({
+        id: "memorize-translate-selection",
+        title: "Traduire avec Memorize",
+        contexts: ["selection"],
+      });
+    })
+    .catch(() => undefined);
 }
 
 chrome.runtime.onInstalled.addListener(() => {
