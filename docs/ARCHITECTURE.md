@@ -6,6 +6,8 @@ Le popup peut réinjecter le content script avec `chrome.scripting` lorsque l’
 
 Le service worker crée aussi le menu contextuel « Traduire avec Memorize ». La sélection est transmise via un état temporaire de `chrome.storage.local`, puis le popup secondaire la consomme et lance automatiquement la traduction.
 
+La langue source est détectée localement avant l’appel de traduction. Si elle correspond à la langue cible actuelle, les deux langues sont inversées ; sinon seule la source est remplacée.
+
 La traduction est un port applicatif (`Translator`) et non une dépendance directe de l’interface. Le premier adaptateur cible MyMemory via son endpoint public, depuis un contexte d’extension autorisé. Les réponses sont validées avant d’entrer dans le domaine ; une erreur réseau, un quota épuisé ou une réponse vide ne peut pas créer de vocabulaire. Une traduction réussie enregistre uniquement une statistique d’essai ; `saveTranslation` est appelé séparément par l’action explicite de mémorisation et rattache alors l’entrée au dossier choisi et à l’historique.
 
 Les anciennes racines de langue sont migrées vers une hiérarchie utilisateur. Les dossiers peuvent être créés à la racine ou dans une autre langue identique ; ils utilisent des identifiants indépendants de leur nom, peuvent être imbriqués, déplacés et renommés. La suppression d’un dossier supprime sa descendance et ses mots, mais conserve l’historique des traductions et les statistiques. `entriesInFolder` parcourt toute la descendance et déduplique les entrées.

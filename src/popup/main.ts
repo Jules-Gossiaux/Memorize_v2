@@ -27,6 +27,7 @@ import {
   myMemoryTranslator,
   type TranslationRequest,
 } from "../application/translator";
+import { detectLanguage } from "../application/language";
 import type { AppData, Folder, VocabularyEntry } from "../domain/model";
 import { chromeStorage } from "../infrastructure/storage";
 
@@ -117,10 +118,22 @@ function bindTranslation(data: AppData): void {
       }
       if (!selection.text)
         return setStatus("Sélectionne un mot ou une phrase sur la page.", true);
+      const detectedLanguage = detectLanguage(selection.text);
+      let sourceLanguage = source.value.trim().toLowerCase();
+      let targetLanguage = target.value.trim().toLowerCase();
+      if (detectedLanguage) {
+        if (detectedLanguage === targetLanguage) {
+          [sourceLanguage, targetLanguage] = [targetLanguage, sourceLanguage];
+        } else {
+          sourceLanguage = detectedLanguage;
+        }
+        source.value = sourceLanguage;
+        target.value = targetLanguage;
+      }
       const request: TranslationRequest = {
         ...selection,
-        sourceLanguage: source.value,
-        targetLanguage: target.value,
+        sourceLanguage,
+        targetLanguage,
       };
       data.preferences.sourceLanguage = request.sourceLanguage
         .trim()
@@ -144,13 +157,6 @@ function bindTranslation(data: AppData): void {
         getElement<HTMLDivElement>("translation-result").classList.remove(
           "empty-result",
         );
-        const badge = document.querySelector<HTMLElement>(
-          "#translation-result .result-badge",
-        );
-        if (badge) {
-          badge.textContent = "Prêt à mémoriser";
-          badge.classList.remove("hidden");
-        }
         setStatus("Belle découverte. À toi de décider si tu la gardes.", false);
       } catch (error) {
         setStatus(

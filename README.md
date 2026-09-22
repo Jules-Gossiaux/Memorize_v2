@@ -4,7 +4,7 @@ Extension Chrome Manifest V3 pour traduire et mémoriser du vocabulaire depuis u
 
 ## État actuel
 
-Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, traduction via MyMemory, compteur visible des traductions, mémorisation explicite dans le dossier choisi, sauvegarde locale versionnée, déduplication, dossiers utilisateur à la racine ou imbriqués, déplacement par glisser-déposer, renommage, suppression confirmée des dossiers et de leurs mots, recherche, thème clair/sombre, historique, préférences et export TXT/CSV/APKG éditable. Aucun dossier de langue n’est créé automatiquement : le premier classement passe par la création ou le choix explicite d’un dossier.
+Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, détection automatique de la langue source, traduction via MyMemory, compteur visible des traductions, mémorisation explicite dans le dossier choisi, sauvegarde locale versionnée, déduplication, dossiers utilisateur à la racine ou imbriqués, déplacement par glisser-déposer, renommage, suppression confirmée des dossiers et de leurs mots, recherche, thème clair/sombre, historique, préférences et export TXT/CSV/APKG éditable. Aucun dossier de langue n’est créé automatiquement : le premier classement passe par la création ou le choix explicite d’un dossier.
 
 ## Installation et développement
 
