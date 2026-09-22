@@ -36,7 +36,7 @@ html {
 body {
   margin: 0;
   width: 480px;
-  min-height: 620px;
+  min-height: 0;
   background: inherit;
 }
 button,
@@ -50,7 +50,7 @@ button {
 #app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 26px 32px 32px;
+  padding: 16px 22px 20px;
 }
 .app-header,
 .workspace-heading,
@@ -100,7 +100,7 @@ button {
   display: flex;
   gap: 26px;
   border-bottom: 1px solid var(--line);
-  margin: 26px 0 20px;
+  margin: 18px 0 12px;
 }
 .nav-button {
   border: 0;
@@ -134,7 +134,7 @@ button {
 .hero-card,
 .result-card,
 .history-card {
-  padding: 24px;
+  padding: 18px;
 }
 .eyebrow,
 .section-kicker {
@@ -144,7 +144,7 @@ button {
   letter-spacing: 0.13em;
 }
 h1 {
-  font-size: 30px;
+  font-size: 25px;
   letter-spacing: -0.04em;
   margin: 10px 0 8px;
 }
@@ -169,7 +169,7 @@ h2 {
   background: var(--soft);
   border-radius: 8px;
   padding: 12px;
-  margin: 18px 0;
+  margin: 10px 0;
   font-size: 12px;
   line-height: 1.45;
 }
@@ -208,7 +208,7 @@ select:focus {
   font-size: 18px;
 }
 .translate-actions {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 .primary-button,
 .save-button {
@@ -242,9 +242,9 @@ select:focus {
   opacity: 0.78;
 }
 .translation {
-  font-size: 27px;
+  font-size: 23px;
   letter-spacing: -0.035em;
-  margin: 18px 0 9px;
+  margin: 12px 0 8px;
   min-height: 30px;
 }
 .translation-count {
@@ -262,7 +262,7 @@ select:focus {
   font-size: 18px;
 }
 .save-button {
-  margin-top: 16px;
+  margin-top: 10px;
   width: 100%;
 }
 .workspace-heading {
@@ -287,7 +287,13 @@ select:focus {
   font-weight: 650;
 }
 .small-icon-button {
+  width: 25px;
+  height: 25px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  color: var(--accent);
   font-size: 18px;
+  line-height: 1;
   padding: 0;
 }
 .sidebar-hint {
@@ -315,6 +321,32 @@ select:focus {
   background: var(--soft);
   color: inherit;
 }
+.folder-node {
+  position: relative;
+}
+.folder-actions {
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0.72;
+  transition: opacity 120ms ease;
+}
+.folder-node:hover .folder-actions,
+.folder-button.selected + .folder-actions {
+  opacity: 1;
+}
+.folder-action {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 2px 3px;
+  font-size: 13px;
+}
+.folder-action:hover {
+  color: var(--accent);
+}
 .folder-dot {
   width: 6px;
   height: 6px;
@@ -332,6 +364,10 @@ select:focus {
   display: flex;
   gap: 10px;
   margin-top: 14px;
+}
+.sidebar-actions #rename-folder,
+.sidebar-actions #delete-folder {
+  display: none;
 }
 .content-panel {
   padding: 20px;
@@ -450,6 +486,32 @@ select:focus {
 .export-dialog form {
   display: grid;
   gap: 14px;
+}
+.export-folder-list {
+  max-height: 105px;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+.export-folder-option {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  padding: 5px;
+  border-radius: 5px;
+}
+.export-folder-option:hover {
+  background: var(--paper);
+}
+.export-folder-option input {
+  width: auto;
+  accent-color: var(--accent);
 }
 .export-dialog h2 {
   font-size: 25px;

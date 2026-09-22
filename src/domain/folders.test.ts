@@ -6,6 +6,7 @@ import {
   ensureLanguageFolder,
   moveEntry,
   moveFolder,
+  removeLegacyLanguageFolders,
   renameFolder,
   ROOT_FOLDER_ID,
 } from "./folders";
@@ -95,5 +96,16 @@ describe("folders", () => {
       data.folders.find((folder) => folder.id === cities.id)?.parentId,
     ).toBe(travel.id);
     expect(() => moveFolder(data, travel.id, cities.id)).toThrow();
+  });
+
+  it("retire les anciens dossiers de langue sans perdre leurs mots", () => {
+    const data = createEmptyData();
+    const fr = ensureLanguageFolder(data, "fr");
+    data.vocabulary.push(entry());
+    data.folderEntries[fr.id] = ["e1"];
+    expect(removeLegacyLanguageFolders(data)).toBe(true);
+    expect(data.folders.some((folder) => folder.id === fr.id)).toBe(false);
+    expect(data.vocabulary).toHaveLength(1);
+    expect(data.folderEntries[data.folders[0]?.id ?? ""] ?? []).toEqual(["e1"]);
   });
 });

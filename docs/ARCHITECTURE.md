@@ -8,4 +8,6 @@ La traduction est un port applicatif (`Translator`) et non une dépendance direc
 
 Les dossiers de langue sont des racines système protégées. Les dossiers utilisateur peuvent être créés à la racine ou dans une autre langue identique ; ils utilisent des identifiants indépendants de leur nom, peuvent être imbriqués, déplacés et renommés. La suppression d’un dossier supprime sa descendance, ses mots, leurs occurrences d’historique et leurs statistiques de traduction. `entriesInFolder` parcourt toute la descendance et déduplique les entrées.
 
+Les nouvelles installations ne créent aucun dossier de langue par défaut. Une migration retire les anciennes racines techniques et récupère leurs mots dans un dossier utilisateur uniquement lorsqu’elles contiennent déjà des données.
+
 L’export est local et isolé dans `src/application/export.ts`. TXT et CSV sont sérialisés avec un séparateur choisi et une prévisualisation modifiable. APKG génère une base SQLite `collection.anki2` et un conteneur ZIP compatible avec Anki, sans backend.

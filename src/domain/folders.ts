@@ -6,6 +6,45 @@ export function isLanguageFolder(folder: Folder): boolean {
   return folder.id.startsWith("language-");
 }
 
+export function removeLegacyLanguageFolders(data: AppData): boolean {
+  const legacyFolders = data.folders.filter(isLanguageFolder);
+  if (!legacyFolders.length) return false;
+  let changed = false;
+  for (const legacy of legacyFolders) {
+    const entries = data.folderEntries[legacy.id] ?? [];
+    const children = data.folders.filter(
+      (folder) => folder.parentId === legacy.id,
+    );
+    for (const child of children) child.parentId = ROOT_FOLDER_ID;
+    if (entries.length) {
+      let recoveryName = "Mes mots";
+      let suffix = 2;
+      while (
+        data.folders.some(
+          (folder) =>
+            folder.parentId === ROOT_FOLDER_ID &&
+            folder.language === legacy.language &&
+            folder.name.toLocaleLowerCase() ===
+              recoveryName.toLocaleLowerCase(),
+        )
+      ) {
+        recoveryName = `Mes mots ${suffix++}`;
+      }
+      const recovery = addFolder(
+        data,
+        recoveryName,
+        legacy.language,
+        ROOT_FOLDER_ID,
+      );
+      data.folderEntries[recovery.id] = entries;
+    }
+    delete data.folderEntries[legacy.id];
+    data.folders = data.folders.filter((folder) => folder.id !== legacy.id);
+    changed = true;
+  }
+  return changed;
+}
+
 export function ensureLanguageFolder(
   data: AppData,
   language: string,

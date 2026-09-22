@@ -3,9 +3,9 @@ import {
   addFolder,
   deleteFolder,
   entriesInFolder,
-  ensureLanguageFolder,
   moveEntry,
   moveFolder,
+  removeLegacyLanguageFolders,
   renameFolder,
   ROOT_FOLDER_ID,
   isLanguageFolder as isSystemLanguageFolder,
@@ -45,17 +45,14 @@ let pendingTranslation: {
 } | null = null;
 let folderDialogMode: FolderDialogMode = "create";
 let saveAfterFolderCreation = false;
+let exportFolderIds = new Set<string>();
 
 void run();
 
 async function run(): Promise<void> {
   const data = await chromeStorage.load();
-  const rootFolder = ensureLanguageFolder(
-    data,
-    data.preferences.targetLanguage,
-  );
-  selectedFolderId = rootFolder.id;
-  await chromeStorage.save(data);
+  selectedFolderId = null;
+  if (removeLegacyLanguageFolders(data)) await chromeStorage.save(data);
   applyTheme(data.preferences.theme);
   bindNavigation(data);
   bindTranslation(data);
@@ -110,7 +107,6 @@ function bindTranslation(data: AppData): void {
         return setStatus("Les deux langues sont obligatoires.", true);
       data.preferences.sourceLanguage = sourceLanguage;
       data.preferences.targetLanguage = targetLanguage;
-      selectedFolderId = ensureLanguageFolder(data, targetLanguage).id;
       await chromeStorage.save(data);
       renderAll(data);
       setStatus("Langues enregistrées.", false);
@@ -202,10 +198,12 @@ function bindFolders(data: AppData): void {
         return;
       try {
         deleteFolder(data, selectedFolderId);
-        selectedFolderId = ensureLanguageFolder(
-          data,
-          data.preferences.targetLanguage,
-        ).id;
+        selectedFolderId =
+          data.folders.find(
+            (folder) =>
+              folder.language === data.preferences.targetLanguage &&
+              folder.id !== selectedFolderId,
+          )?.id ?? null;
         await chromeStorage.save(data);
         renderAll(data);
         setStatus("Dossier et mots supprimés.", false);
@@ -219,11 +217,36 @@ function bindFolders(data: AppData): void {
   );
   getElement<HTMLDivElement>("folder-tree").addEventListener(
     "click",
-    (event) => {
+    async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLButtonElement) || !target.dataset.folderId)
         return;
       selectedFolderId = target.dataset.folderId;
+      if (target.dataset.folderAction === "rename") {
+        openFolderDialog(data, "rename");
+        return;
+      }
+      if (target.dataset.folderAction === "delete") {
+        if (
+          !window.confirm(
+            "Supprimer ce dossier, ses sous-dossiers et ses mots ?",
+          )
+        )
+          return;
+        try {
+          deleteFolder(data, selectedFolderId);
+          selectedFolderId = null;
+          await chromeStorage.save(data);
+          renderAll(data);
+          setStatus("Dossier supprimé.", false);
+        } catch (error) {
+          setStatus(
+            error instanceof Error ? error.message : "Suppression impossible.",
+            true,
+          );
+        }
+        return;
+      }
       renderAll(data);
     },
   );
@@ -583,6 +606,25 @@ function renderFolderNode(data: AppData, folder: Folder): HTMLDivElement {
   text.textContent = folder.name;
   button.append(dot, text);
   wrapper.append(button);
+  if (!isSystemLanguageFolder(folder)) {
+    const actions = document.createElement("span");
+    actions.className = "folder-actions";
+    for (const action of ["rename", "delete"] as const) {
+      const actionButton = document.createElement("button");
+      actionButton.type = "button";
+      actionButton.className = `folder-action ${action === "delete" ? "danger-text" : ""}`;
+      actionButton.dataset.folderId = folder.id;
+      actionButton.dataset.folderAction = action;
+      actionButton.setAttribute(
+        "aria-label",
+        action === "rename" ? "Renommer le dossier" : "Supprimer le dossier",
+      );
+      actionButton.title = action === "rename" ? "Renommer" : "Supprimer";
+      actionButton.textContent = action === "rename" ? "✎" : "🗑";
+      actions.append(actionButton);
+    }
+    wrapper.append(actions);
+  }
   const children = data.folders.filter(
     (candidate) => candidate.parentId === folder.id,
   );
@@ -766,9 +808,16 @@ function bindExportDialog(data: AppData): void {
     "input",
     () => updateExportPreview(data),
   );
-  getElement<HTMLInputElement>("export-examples").addEventListener(
+  getElement<HTMLDivElement>("export-folder-list").addEventListener(
     "change",
-    () => updateExportPreview(data),
+    (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || !input.dataset.folderId)
+        return;
+      if (input.checked) exportFolderIds.add(input.dataset.folderId);
+      else exportFolderIds.delete(input.dataset.folderId);
+      updateExportPreview(data);
+    },
   );
   getElement<HTMLButtonElement>("export-copy").addEventListener(
     "click",
@@ -783,32 +832,28 @@ function bindExportDialog(data: AppData): void {
     "submit",
     async (event) => {
       event.preventDefault();
-      const folder = data.folders.find((item) => item.id === selectedFolderId);
-      if (!folder) return;
       const format = getElement<HTMLSelectElement>("export-format")
         .value as ExportFormat;
-      const entries = entriesInFolder(data, folder.id);
-      const includeExamples =
-        getElement<HTMLInputElement>("export-examples").checked;
+      const entries = getExportEntries(data);
+      if (!entries.length)
+        return setStatus(
+          "Sélectionne au moins un dossier contenant un mot.",
+          true,
+        );
       if (format === "apkg") {
         const packageData = await createAnkiPackage(
           parseSerializedEntries(
             getElement<HTMLTextAreaElement>("export-preview").value,
-            getExportDelimiter(),
+            getExportDelimiter(format),
             entries,
           ),
-          includeExamples,
         );
-        downloadBlob(
-          packageData,
-          `${safeFilename(folder.name)}.apkg`,
-          "application/zip",
-        );
+        downloadBlob(packageData, "memorize-export.apkg", "application/zip");
       } else {
         const text = getElement<HTMLTextAreaElement>("export-preview").value;
         downloadBlob(
           text,
-          `${safeFilename(folder.name)}.${format}`,
+          `memorize-export.${format}`,
           "text/plain;charset=utf-8",
         );
       }
@@ -819,13 +864,25 @@ function bindExportDialog(data: AppData): void {
 }
 
 function openExportDialog(data: AppData): void {
-  const folder = data.folders.find((item) => item.id === selectedFolderId);
-  if (!folder) return setStatus("Sélectionne un dossier à exporter.", true);
-  getElement<HTMLElement>("export-folder-copy").textContent =
-    `${folder.name} · ${entriesInFolder(data, folder.id).length} mots`;
+  if (!data.folders.length) return setStatus("Crée d’abord un dossier.", true);
+  exportFolderIds = new Set(selectedFolderId ? [selectedFolderId] : []);
+  const list = getElement<HTMLDivElement>("export-folder-list");
+  list.replaceChildren(
+    ...data.folders.map((folder) => {
+      const label = document.createElement("label");
+      label.className = "export-folder-option";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.dataset.folderId = folder.id;
+      input.checked = exportFolderIds.has(folder.id);
+      const name = document.createElement("span");
+      name.textContent = `${"  ".repeat(folderDepth(data, folder.id))}${folder.name}`;
+      label.append(input, name);
+      return label;
+    }),
+  );
   getElement<HTMLSelectElement>("export-format").value = "txt";
   getElement<HTMLSelectElement>("export-delimiter").value = ",";
-  getElement<HTMLInputElement>("export-examples").checked = false;
   getElement<HTMLElement>("delimiter-label").hidden = false;
   getElement<HTMLElement>("custom-delimiter-label").classList.add("hidden");
   updateExportPreview(data);
@@ -833,35 +890,32 @@ function openExportDialog(data: AppData): void {
 }
 
 function updateExportPreview(data: AppData): void {
-  const folder = data.folders.find((item) => item.id === selectedFolderId);
-  if (!folder) return;
-  const delimiter = getExportDelimiter();
-  const entries = entriesInFolder(data, folder.id);
-  const includeExamples =
-    getElement<HTMLInputElement>("export-examples").checked;
+  const format = getElement<HTMLSelectElement>("export-format")
+    .value as ExportFormat;
+  const delimiter = getExportDelimiter(format);
+  const entries = getExportEntries(data);
   getElement<HTMLTextAreaElement>("export-preview").value = serializeEntries(
     entries,
     delimiter,
-    includeExamples,
+    format === "csv",
   );
   getElement<HTMLElement>("export-count").textContent =
     `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
 }
 
-function getExportDelimiter(): string {
+function getExportDelimiter(format: ExportFormat): string {
   const selected = getElement<HTMLSelectElement>("export-delimiter").value;
+  if (format === "csv" && selected === ",") return ", ";
   return selected === "custom"
     ? getElement<HTMLInputElement>("custom-delimiter").value || "|"
     : selected;
 }
 
-function safeFilename(value: string): string {
-  return (
-    value
-      .trim()
-      .replace(/[^a-z0-9-_]+/gi, "-")
-      .replace(/^-|-$/g, "") || "memorize"
-  );
+function getExportEntries(data: AppData): VocabularyEntry[] {
+  const ids = new Set<string>();
+  for (const folderId of exportFolderIds)
+    for (const entry of entriesInFolder(data, folderId)) ids.add(entry.id);
+  return data.vocabulary.filter((entry) => ids.has(entry.id));
 }
 
 function bindMemorizeDialog(data: AppData): void {

@@ -18,10 +18,10 @@ const entries: VocabularyEntry[] = [
 ];
 
 describe("vocabulary export", () => {
-  it("échappe les champs et conserve les exemples", () => {
-    const text = serializeEntries(entries, ",", true);
-    expect(text).toContain('"hello, world",bonjour,"Hello, world!"');
-    expect(parseSerializedEntries(text, ",", entries)[0]?.original).toBe(
+  it("échappe les champs dans un export CSV", () => {
+    const text = serializeEntries(entries, ", ", true);
+    expect(text).toContain('"hello, world", "bonjour"');
+    expect(parseSerializedEntries(text, ", ", entries)[0]?.original).toBe(
       "hello, world",
     );
   });

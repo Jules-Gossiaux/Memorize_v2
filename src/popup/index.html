@@ -249,10 +249,11 @@
           ×
         </button>
         <div class="eyebrow">EXPORTER LE DOSSIER</div>
-        <h2>Choisis ton export.</h2>
-        <p id="export-folder-copy" class="muted">
-          Modifie le contenu avant de télécharger.
+        <h2>Exporter des dossiers.</h2>
+        <p class="muted">
+          Choisis un ou plusieurs dossiers, puis ajuste le fichier.
         </p>
+        <div id="export-folder-list" class="export-folder-list"></div>
         <div class="export-options">
           <label
             >Format<select id="export-format">
@@ -276,10 +277,6 @@
             maxlength="3"
             placeholder="|"
         /></label>
-        <label class="checkbox-label"
-          ><input id="export-examples" type="checkbox" /> Inclure les
-          exemples</label
-        >
         <div class="preview-heading">
           <span>Aperçu modifiable</span
           ><span id="export-count" class="muted">0 mots</span>

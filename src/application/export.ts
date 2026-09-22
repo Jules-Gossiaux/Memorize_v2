@@ -5,28 +5,18 @@ import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 
 export type ExportFormat = "txt" | "csv" | "apkg";
 
-export interface ExportOptions {
-  format: ExportFormat;
-  delimiter: string;
-  includeExamples: boolean;
-}
-
 export function serializeEntries(
   entries: VocabularyEntry[],
   delimiter: string,
-  includeExamples: boolean,
+  quoteAll = false,
 ): string {
-  const header = includeExamples
-    ? ["Word", "Translation", "Example"]
-    : ["Word", "Translation"];
-  const rows = entries.map((entry) =>
-    includeExamples
-      ? [entry.original, entry.translation, entry.context]
-      : [entry.original, entry.translation],
-  );
+  const header = ["Word", "Translation"];
+  const rows = entries.map((entry) => [entry.original, entry.translation]);
   return [header, ...rows]
     .map((row) =>
-      row.map((value) => escapeField(value, delimiter)).join(delimiter),
+      row
+        .map((value) => escapeField(value, delimiter, quoteAll))
+        .join(delimiter),
     )
     .join("\n");
 }
@@ -58,9 +48,10 @@ function parseLine(
       value += '"';
       index += 1;
     } else if (character === '"') quoted = !quoted;
-    else if (character === delimiter && !quoted) {
+    else if (!quoted && line.startsWith(delimiter, index)) {
       values.push(value);
       value = "";
+      index += delimiter.length - 1;
     } else value += character;
   }
   values.push(value);
@@ -88,14 +79,18 @@ function indexOfValue(value: string): string {
   );
 }
 
-function escapeField(value: string, delimiter: string): string {
-  if (!/["\r\n]/.test(value) && !value.includes(delimiter)) return value;
+function escapeField(
+  value: string,
+  delimiter: string,
+  quoteAll: boolean,
+): string {
+  if (!quoteAll && !/["\r\n]/.test(value) && !value.includes(delimiter))
+    return value;
   return `"${value.replaceAll('"', '""')}"`;
 }
 
 export async function createAnkiPackage(
   entries: VocabularyEntry[],
-  includeExamples: boolean,
 ): Promise<Uint8Array> {
   const SQL = await initSqlJs({
     locateFile: () => wasmUrl,
@@ -104,12 +99,8 @@ export async function createAnkiPackage(
   const now = Math.floor(Date.now() / 1000);
   const modelId = now * 1000 + 1;
   const deckId = now * 1000 + 2;
-  const fields = includeExamples
-    ? ["Word", "Translation", "Example"]
-    : ["Word", "Translation"];
-  const templateBack = includeExamples
-    ? "{{Translation}}<br>{{Example}}"
-    : "{{Translation}}";
+  const fields = ["Word", "Translation"];
+  const templateBack = "{{Translation}}";
   const model = JSON.stringify({
     [modelId]: {
       id: modelId,
@@ -178,9 +169,7 @@ export async function createAnkiPackage(
   ]);
   entries.forEach((entry, index) => {
     const noteId = now * 1_000_000 + index + 1;
-    const values = includeExamples
-      ? [entry.original, entry.translation, entry.context]
-      : [entry.original, entry.translation];
+    const values = [entry.original, entry.translation];
     const flds = values.join("\x1f");
     db.run("INSERT INTO notes VALUES (?, ?, ?, ?, -1, '', ?, ?, 0, 0, '')", [
       noteId,
