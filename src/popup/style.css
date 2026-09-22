@@ -30,12 +30,12 @@
   box-sizing: border-box;
 }
 html {
-  width: 680px;
-  min-width: 680px;
+  width: 580px;
+  min-width: 580px;
 }
 body {
   margin: 0;
-  width: 680px;
+  width: 580px;
   min-height: 620px;
   background: inherit;
 }
@@ -48,7 +48,7 @@ button {
   cursor: pointer;
 }
 #app {
-  max-width: 680px;
+  max-width: 580px;
   margin: 0 auto;
   padding: 26px 32px 32px;
 }
@@ -269,7 +269,7 @@ select:focus {
 }
 .workspace {
   display: grid;
-  grid-template-columns: 190px 1fr;
+  grid-template-columns: 165px 1fr;
   min-height: 390px;
   overflow: hidden;
 }
@@ -429,6 +429,56 @@ select:focus {
 }
 .folder-dialog form > label {
   margin-top: 17px;
+}
+.export-dialog {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: inherit;
+  padding: 24px;
+}
+.export-dialog::backdrop {
+  background: rgb(0 0 0 / 38%);
+}
+.export-dialog form {
+  display: grid;
+  gap: 14px;
+}
+.export-dialog h2 {
+  font-size: 25px;
+  margin: 0;
+}
+.export-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+}
+.checkbox-label input {
+  width: auto;
+  accent-color: var(--accent);
+}
+.preview-heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+#export-preview {
+  min-height: 220px;
+  resize: vertical;
+  border-radius: 9px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.55;
 }
 .dialog-actions {
   justify-content: end;

@@ -17,6 +17,13 @@ import {
   saveTranslation,
 } from "../application/vocabulary";
 import {
+  createAnkiPackage,
+  downloadBlob,
+  parseSerializedEntries,
+  serializeEntries,
+  type ExportFormat,
+} from "../application/export";
+import {
   myMemoryTranslator,
   type TranslationRequest,
 } from "../application/translator";
@@ -315,6 +322,7 @@ function bindFolders(data: AppData): void {
   );
   bindFolderDialog(data);
   bindMemorizeDialog(data);
+  bindExportDialog(data);
 }
 
 function bindHistory(data: AppData): void {
@@ -708,6 +716,141 @@ function openMemorizeDialog(data: AppData): void {
   getElement<HTMLDialogElement>("memorize-dialog").showModal();
 }
 
+function bindExportDialog(data: AppData): void {
+  const dialog = getElement<HTMLDialogElement>("export-dialog");
+  const close = () => dialog.close();
+  getElement<HTMLButtonElement>("export-folder").addEventListener("click", () =>
+    openExportDialog(data),
+  );
+  getElement<HTMLButtonElement>("export-dialog-close").addEventListener(
+    "click",
+    close,
+  );
+  getElement<HTMLButtonElement>("export-dialog-cancel").addEventListener(
+    "click",
+    close,
+  );
+  getElement<HTMLSelectElement>("export-format").addEventListener(
+    "change",
+    () => {
+      const format = getElement<HTMLSelectElement>("export-format")
+        .value as ExportFormat;
+      getElement<HTMLElement>("delimiter-label").hidden = format === "apkg";
+      updateExportPreview(data);
+    },
+  );
+  getElement<HTMLSelectElement>("export-delimiter").addEventListener(
+    "change",
+    () => {
+      getElement<HTMLElement>("custom-delimiter-label").classList.toggle(
+        "hidden",
+        getElement<HTMLSelectElement>("export-delimiter").value !== "custom",
+      );
+      updateExportPreview(data);
+    },
+  );
+  getElement<HTMLInputElement>("custom-delimiter").addEventListener(
+    "input",
+    () => updateExportPreview(data),
+  );
+  getElement<HTMLInputElement>("export-examples").addEventListener(
+    "change",
+    () => updateExportPreview(data),
+  );
+  getElement<HTMLButtonElement>("export-copy").addEventListener(
+    "click",
+    async () => {
+      await navigator.clipboard.writeText(
+        getElement<HTMLTextAreaElement>("export-preview").value,
+      );
+      setStatus("Aperçu copié.", false);
+    },
+  );
+  getElement<HTMLFormElement>("export-form").addEventListener(
+    "submit",
+    async (event) => {
+      event.preventDefault();
+      const folder = data.folders.find((item) => item.id === selectedFolderId);
+      if (!folder) return;
+      const format = getElement<HTMLSelectElement>("export-format")
+        .value as ExportFormat;
+      const entries = entriesInFolder(data, folder.id);
+      const includeExamples =
+        getElement<HTMLInputElement>("export-examples").checked;
+      if (format === "apkg") {
+        const packageData = await createAnkiPackage(
+          parseSerializedEntries(
+            getElement<HTMLTextAreaElement>("export-preview").value,
+            getExportDelimiter(),
+            entries,
+          ),
+          includeExamples,
+        );
+        downloadBlob(
+          packageData,
+          `${safeFilename(folder.name)}.apkg`,
+          "application/zip",
+        );
+      } else {
+        const text = getElement<HTMLTextAreaElement>("export-preview").value;
+        downloadBlob(
+          text,
+          `${safeFilename(folder.name)}.${format}`,
+          "text/plain;charset=utf-8",
+        );
+      }
+      close();
+      setStatus("Export téléchargé.", false);
+    },
+  );
+}
+
+function openExportDialog(data: AppData): void {
+  const folder = data.folders.find((item) => item.id === selectedFolderId);
+  if (!folder) return setStatus("Sélectionne un dossier à exporter.", true);
+  getElement<HTMLElement>("export-folder-copy").textContent =
+    `${folder.name} · ${entriesInFolder(data, folder.id).length} mots`;
+  getElement<HTMLSelectElement>("export-format").value = "txt";
+  getElement<HTMLSelectElement>("export-delimiter").value = ",";
+  getElement<HTMLInputElement>("export-examples").checked = false;
+  getElement<HTMLElement>("delimiter-label").hidden = false;
+  getElement<HTMLElement>("custom-delimiter-label").classList.add("hidden");
+  updateExportPreview(data);
+  getElement<HTMLDialogElement>("export-dialog").showModal();
+}
+
+function updateExportPreview(data: AppData): void {
+  const folder = data.folders.find((item) => item.id === selectedFolderId);
+  if (!folder) return;
+  const delimiter = getExportDelimiter();
+  const entries = entriesInFolder(data, folder.id);
+  const includeExamples =
+    getElement<HTMLInputElement>("export-examples").checked;
+  getElement<HTMLTextAreaElement>("export-preview").value = serializeEntries(
+    entries,
+    delimiter,
+    includeExamples,
+  );
+  getElement<HTMLElement>("export-count").textContent =
+    `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
+}
+
+function getExportDelimiter(): string {
+  const selected = getElement<HTMLSelectElement>("export-delimiter").value;
+  return selected === "custom"
+    ? getElement<HTMLInputElement>("custom-delimiter").value || "|"
+    : selected;
+}
+
+function safeFilename(value: string): string {
+  return (
+    value
+      .trim()
+      .replace(/[^a-z0-9-_]+/gi, "-")
+      .replace(/^-|-$/g, "") || "memorize"
+  );
+}
+
 function bindMemorizeDialog(data: AppData): void {
   const dialog = getElement<HTMLDialogElement>("memorize-dialog");
   const close = () => dialog.close();
@@ -718,6 +861,17 @@ function bindMemorizeDialog(data: AppData): void {
   getElement<HTMLButtonElement>("memorize-dialog-cancel").addEventListener(
     "click",
     close,
+  );
+  getElement<HTMLButtonElement>("memorize-new-folder").addEventListener(
+    "click",
+    () => {
+      dialog.close();
+      saveAfterFolderCreation = true;
+      const language =
+        pendingTranslation?.request.targetLanguage.trim().toLowerCase() ??
+        data.preferences.targetLanguage;
+      openFolderDialog(data, "create", language);
+    },
   );
   getElement<HTMLFormElement>("memorize-form").addEventListener(
     "submit",
@@ -736,7 +890,7 @@ function bindMemorizeDialog(data: AppData): void {
         pendingTranslation = null;
         getElement<HTMLButtonElement>("memorize").disabled = true;
         close();
-        activateView("vocabulary");
+        activateView("translate");
         renderAll(data);
         setStatus(
           result.created ? "Ajouté à ta bibliothèque." : "Entrée mise à jour.",

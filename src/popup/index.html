@@ -120,6 +120,9 @@
             </p>
             <div id="folder-tree" class="folder-tree" role="tree"></div>
             <div class="sidebar-actions">
+              <button id="export-folder" class="text-button" type="button">
+                Exporter
+              </button>
               <button id="rename-folder" class="text-button" type="button">
                 Renommer</button
               ><button
@@ -225,10 +228,71 @@
           >Dossier<select id="memorize-folder"></select
         ></label>
         <div class="dialog-actions">
+          <button id="memorize-new-folder" class="text-button" type="button">
+            ＋ Nouveau dossier
+          </button>
           <button id="memorize-dialog-cancel" class="text-button" type="button">
             Annuler
           </button>
           <button class="primary-button" type="submit">Mémoriser</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="export-dialog" class="export-dialog">
+      <form id="export-form">
+        <button
+          id="export-dialog-close"
+          class="dialog-close"
+          type="button"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+        <div class="eyebrow">EXPORTER LE DOSSIER</div>
+        <h2>Choisis ton export.</h2>
+        <p id="export-folder-copy" class="muted">
+          Modifie le contenu avant de télécharger.
+        </p>
+        <div class="export-options">
+          <label
+            >Format<select id="export-format">
+              <option value="txt">TXT</option>
+              <option value="csv">CSV</option>
+              <option value="apkg">APKG · Anki</option>
+            </select></label
+          >
+          <label id="delimiter-label"
+            >Séparateur<select id="export-delimiter">
+              <option value=",">Virgule (,)</option>
+              <option value=";">Point-virgule (;)</option>
+              <option value="\t">Tabulation</option>
+              <option value="custom">Personnalisé</option>
+            </select></label
+          >
+        </div>
+        <label id="custom-delimiter-label" class="hidden"
+          >Caractère personnalisé<input
+            id="custom-delimiter"
+            maxlength="3"
+            placeholder="|"
+        /></label>
+        <label class="checkbox-label"
+          ><input id="export-examples" type="checkbox" /> Inclure les
+          exemples</label
+        >
+        <div class="preview-heading">
+          <span>Aperçu modifiable</span
+          ><span id="export-count" class="muted">0 mots</span>
+        </div>
+        <textarea id="export-preview" spellcheck="false"></textarea>
+        <div class="dialog-actions">
+          <button id="export-dialog-cancel" class="text-button" type="button">
+            Annuler
+          </button>
+          <button id="export-copy" class="text-button" type="button">
+            Copier
+          </button>
+          <button class="primary-button" type="submit">Télécharger</button>
         </div>
       </form>
     </dialog>

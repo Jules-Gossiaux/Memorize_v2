@@ -10,4 +10,5 @@
 - Ajout des sous-dossiers, déplacements, renommages et suppressions confirmées avec suppression cohérente des mots contenus.
 - Les dossiers utilisateur peuvent maintenant être créés à la racine ; la mémorisation demande le dossier cible et la suppression d’un dossier ou d’un mot supprime les données associées.
 - Interface de vocabulaire allégée et compteur de traductions rendu plus visible.
+- Ajout de l’export éditable TXT, CSV et APKG avec séparateur configurable et aperçu en direct.
 - Refonte complète de la popup : navigation par vues, cartes de vocabulaire, recherche, thème clair/sombre et glisser-déposer.
