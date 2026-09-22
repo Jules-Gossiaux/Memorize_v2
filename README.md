@@ -4,7 +4,7 @@ Extension Chrome Manifest V3 pour traduire et mémoriser du vocabulaire depuis u
 
 ## État actuel
 
-Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, détection automatique de la langue source, traduction via MyMemory, compteur visible des traductions, mémorisation explicite dans le dossier choisi, sauvegarde locale versionnée, déduplication, dossiers utilisateur à la racine ou imbriqués, déplacement par glisser-déposer, renommage, suppression confirmée des dossiers et de leurs mots, recherche, thème clair/sombre, historique, préférences et export TXT/CSV/APKG éditable. Aucun dossier de langue n’est créé automatiquement : le premier classement passe par la création ou le choix explicite d’un dossier.
+Le dépôt contient un gestionnaire de vocabulaire local : sélection depuis la page active, détection automatique de la langue de la page, traduction via MyMemory, compteur visible des traductions, mémorisation explicite dans le dossier choisi, sauvegarde locale versionnée, déduplication, dossiers utilisateur à la racine ou imbriqués, déplacement par glisser-déposer, renommage, suppression confirmée des dossiers et de leurs mots, recherche, thème clair/sombre, historique, préférences et export TXT/CSV/APKG. Aucun dossier de langue n’est créé automatiquement : le premier classement passe par la création ou le choix explicite d’un dossier.
 
 ## Installation et développement
 
@@ -32,4 +32,4 @@ Les dates sont des chaînes ISO 8601 en UTC. Les identifiants métier des dossie
 
 ## Limites connues
 
-Quizlet et l’export ne sont pas encore livrés. MyMemory est un service externe gratuit soumis à ses limites de quota et de disponibilité ; l’extension affiche une erreur et ne sauvegarde rien en cas d’échec. Une traduction réussie n’est pas mémorisée automatiquement : l’utilisateur doit cliquer sur « Mémoriser cette traduction ». LibreTranslate reste optionnel et Reverso Context ne sera pas scrapé.
+Quizlet n’est pas encore livré. MyMemory est un service externe gratuit soumis à ses limites de quota et de disponibilité ; l’extension affiche une erreur et ne sauvegarde rien en cas d’échec. Une traduction réussie n’est pas mémorisée automatiquement : l’utilisateur doit cliquer sur « Mémoriser cette traduction ». LibreTranslate reste optionnel et Reverso Context ne sera pas scrapé. L’export APKG produit un paquet Anki local sans média ; l’aperçu texte n’est pas utilisé pour ce format.

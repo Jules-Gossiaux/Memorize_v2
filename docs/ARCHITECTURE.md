@@ -6,7 +6,7 @@ Le popup peut réinjecter le content script avec `chrome.scripting` lorsque l’
 
 Le service worker crée aussi le menu contextuel « Traduire avec Memorize ». La sélection est transmise via un état temporaire de `chrome.storage.local`, puis le popup secondaire la consomme et lance automatiquement la traduction.
 
-La langue source est détectée localement avant l’appel de traduction. Si elle correspond à la langue cible actuelle, les deux langues sont inversées ; sinon seule la source est remplacée.
+La langue source est détectée localement avant l’appel de traduction. Le content script transmet l’attribut `lang` et un extrait borné du texte visible de la page ; le popup utilise le texte de la page lorsque l’attribut est absent. Si la langue détectée correspond à la langue cible actuelle, les deux langues sont inversées ; sinon seule la source est remplacée.
 
 La traduction est un port applicatif (`Translator`) et non une dépendance directe de l’interface. Le premier adaptateur cible MyMemory via son endpoint public, depuis un contexte d’extension autorisé. Les réponses sont validées avant d’entrer dans le domaine ; une erreur réseau, un quota épuisé ou une réponse vide ne peut pas créer de vocabulaire. Une traduction réussie enregistre uniquement une statistique d’essai ; `saveTranslation` est appelé séparément par l’action explicite de mémorisation et rattache alors l’entrée au dossier choisi et à l’historique.
 
@@ -14,4 +14,4 @@ Les anciennes racines de langue sont migrées vers une hiérarchie utilisateur. 
 
 Les nouvelles installations ne créent aucun dossier de langue par défaut. Une migration retire les anciennes racines techniques et récupère leurs mots dans un dossier utilisateur uniquement lorsqu’elles contiennent déjà des données.
 
-L’export est local et isolé dans `src/application/export.ts`. TXT et CSV sont sérialisés avec un séparateur choisi et une prévisualisation modifiable. APKG génère une base SQLite `collection.anki2` et un conteneur ZIP compatible avec Anki, sans backend.
+L’export est local et isolé dans `src/application/export.ts`. TXT et CSV sont sérialisés avec un séparateur choisi et une prévisualisation modifiable. APKG génère une base SQLite `collection.anki2` et un conteneur ZIP au format de paquet Anki historique, contenant aussi le fichier `media` requis, sans backend ni média. Son aperçu est informatif : le fichier binaire est construit au téléchargement à partir des entrées sélectionnées.

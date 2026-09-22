@@ -7,6 +7,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     text: selection,
     url: window.location.href,
     context,
+    pageLanguage: getDeclaredPageLanguage(),
+    pageText: getPageText(),
   });
   return true;
 });
@@ -25,11 +27,24 @@ document.addEventListener("selectionchange", () => {
           text,
           url: window.location.href,
           context: getSelectionContext(selectionObject, text),
+          pageLanguage: getDeclaredPageLanguage(),
+          pageText: getPageText(),
         },
       })
       .catch(() => undefined);
   }, 80);
 });
+
+function getDeclaredPageLanguage(): string | null {
+  const declaredLanguage =
+    document.documentElement.lang.trim().toLocaleLowerCase().split(/[-_]/)[0] ??
+    "";
+  return /^[a-z]{2}$/.test(declaredLanguage) ? declaredLanguage : null;
+}
+
+function getPageText(): string {
+  return (document.body?.innerText?.trim() ?? "").slice(0, 20_000);
+}
 
 function getSelectionContext(
   selection: Selection | null,

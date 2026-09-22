@@ -35,6 +35,8 @@ interface SelectionResponse {
   text: string;
   url: string;
   context: string;
+  pageLanguage?: string | null;
+  pageText?: string;
 }
 type ViewName = "translate" | "vocabulary" | "history";
 type FolderDialogMode = "create" | "rename";
@@ -566,6 +568,12 @@ async function readSelection(): Promise<SelectionResponse> {
                       Math.max(0, index - 220),
                       index + text.length + 220,
                     ),
+            pageLanguage:
+              document.documentElement.lang
+                .trim()
+                .toLocaleLowerCase()
+                .split(/[-_]/)[0] || null,
+            pageText: (document.body?.innerText?.trim() ?? "").slice(0, 20_000),
           };
         },
       });
@@ -587,7 +595,10 @@ async function readPendingSelection(): Promise<SelectionResponse | null> {
 }
 
 function renderSelection(selection: SelectionResponse): void {
-  applyDetectedLanguage(selection.text);
+  applyDetectedLanguage(
+    selection.pageLanguage ??
+      detectLanguage(selection.pageText ?? selection.text),
+  );
   const element = getElement<HTMLDivElement>("selection");
   element.replaceChildren();
   const icon = document.createElement("span");
@@ -600,8 +611,11 @@ function renderSelection(selection: SelectionResponse): void {
   element.append(icon, text);
 }
 
-function applyDetectedLanguage(text: string): void {
-  const detectedLanguage = detectLanguage(text);
+function applyDetectedLanguage(languageOrText: string | null): void {
+  const detectedLanguage =
+    languageOrText && languageOrText.length === 2
+      ? languageOrText
+      : detectLanguage(languageOrText ?? "");
   if (!detectedLanguage) return;
   const source = getElement<HTMLInputElement>("source");
   const target = getElement<HTMLInputElement>("target");
@@ -980,11 +994,14 @@ function updateExportPreview(data: AppData): void {
     .value as ExportFormat;
   const delimiter = getExportDelimiter(format);
   const entries = getExportEntries(data);
-  getElement<HTMLTextAreaElement>("export-preview").value = serializeEntries(
-    entries,
-    delimiter,
-    format === "csv",
-  );
+  const preview = getElement<HTMLTextAreaElement>("export-preview");
+  const copyButton = getElement<HTMLButtonElement>("export-copy");
+  const isAnkiPackage = format === "apkg";
+  preview.readOnly = isAnkiPackage;
+  copyButton.hidden = isAnkiPackage;
+  preview.value = isAnkiPackage
+    ? `Un paquet Anki sera généré au téléchargement.\n\n${entries.length} ${entries.length === 1 ? "carte" : "cartes"} avec les champs Word et Translation.`
+    : serializeEntries(entries, delimiter, format === "csv");
   getElement<HTMLElement>("export-count").textContent =
     `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
 }
